@@ -1,64 +1,39 @@
+from urllib.parse import unquote
 from aiogram import Router, F
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery, InputMediaPhoto, ReplyKeyboardRemove
-from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.types import Message, CallbackQuery, InputMediaPhoto, ReplyKeyboardRemove, BufferedInputFile
 
-from bot.keyboards.inline import check_payment_kb, plate_kb
+from bot.keyboards.inline import plate_kb
 from bot.keyboards.reply import request_contact_kb
+from bot.keyboards.utils import keyboard_from_queryset, one_button_keyboard
 from bot.settings import settings
 from bot.states import BuyingState
+from starlink.models import Plate
 
 router = Router()
-
-plates = [
-    {
-        'id': 1,
-        'model': 'Модель 1',
-        'photo': 'https://placehold.jp/3d4070/ffffff/150x150.png?text=%D0%9C%D0%BE%D0%B4%D0%B5%D0%BB%D1%8C%201',
-        'price': 100,
-        'description': 'Описание модели 1',
-    },
-    {
-        'id': 2,
-        'model': 'Модель 2',
-        'photo': 'https://placehold.jp/d92626/ffffff/150x150.png?text=%D0%9C%D0%BE%D0%B4%D0%B5%D0%BB%D1%8C%202',
-        'price': 100,
-        'description': 'Описание модели 2',
-    },
-    {
-        'id': 3,
-        'model': 'Модель 3',
-        'photo': 'https://placehold.jp/26d94a/ffffff/150x150.png?text=%D0%9C%D0%BE%D0%B4%D0%B5%D0%BB%D1%8C%203',
-        'price': 100,
-        'description': 'Описание модели 3',
-    },
-]
 
 
 @router.message(Command('buy'))
 async def buy(msg: Message, state: FSMContext):
     await state.update_data(plate_message_id=None)
 
-    kb = InlineKeyboardBuilder()
-    for plate in plates:
-        kb.button(text=plate['model'], callback_data=f'plate_{plate["id"]}')
-    kb.adjust(1)
-
-    await msg.answer('Тарелки', reply_markup=kb.as_markup())
+    await msg.answer(
+        'Тарелки',
+        reply_markup=await keyboard_from_queryset(Plate, 'plate')
+    )
 
 
 @router.callback_query(F.data.startswith('plate'))
 async def display_plate(query: CallbackQuery, state: FSMContext):
-    plate_id = int(query.data.split('_')[-1])
-    plate = list(filter(lambda x: x['id'] == plate_id, plates))[0]
+    plate = await Plate.objects.aget(pk=int(query.data.split('_')[-1]))
 
-    await state.update_data(plate_id=plate_id)
+    await state.update_data(plate_id=plate.pk)
     plate_message_id = await state.get_value('plate_message_id')
 
-    media = plate['photo']
-    caption = f'{plate["model"]}\n\n{plate["description"]}'
+    media = BufferedInputFile.from_file(unquote(plate.photo.url.lstrip('/')))
+    caption = f'{plate.model}\n\n{plate.description}'
 
     if plate_message_id:
         try:
@@ -103,20 +78,22 @@ async def set_phone(msg: Message, state: FSMContext):
     else:
         await state.update_data(phone=msg.text)
 
-    await msg.answer('Ваша ссылка на оплату.', reply_markup=check_payment_kb)
+    await msg.answer(
+        'Ваша ссылка на оплату.',
+        reply_markup=one_button_keyboard(text='Я оплатил', callback_data='check_buying_payment')
+    )
     await state.set_state(BuyingState.buying)
 
 
-@router.callback_query(F.data == 'check_payment', StateFilter(BuyingState.buying))
-async def check_payment(query: CallbackQuery, state: FSMContext):
+@router.callback_query(F.data == 'check_buying_payment', StateFilter(BuyingState.buying))
+async def check_buying_payment(query: CallbackQuery, state: FSMContext):
     data = await state.get_data()
-
-    plate = list(filter(lambda x: x['id'] == data['plate_id'], plates))[0]
+    plate = await Plate.objects.aget(pk=data['plate_id'])
 
     payment_completed = True
     if payment_completed:
         text = (
-            f'Покупка {plate["model"]}\n\n'
+            f'Покупка тарелки {plate.model}\n\n'
             f'Данные покупателя:\n'
             f'Телефон: {data["phone"]}\n'
         )

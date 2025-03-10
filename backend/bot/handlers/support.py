@@ -3,8 +3,9 @@ from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
-from aiogram.utils.keyboard import InlineKeyboardBuilder
 
+from bot.keyboards.utils import keyboard_from_queryset, one_button_keyboard
+from bot.settings import settings
 from starlink.models import SupportSection
 
 router = Router()
@@ -15,13 +16,13 @@ router = Router()
 async def support(msg: Message, state: FSMContext):
     await state.update_data(support_section_message_id=None)
 
-    kb = InlineKeyboardBuilder()
-    sections = SupportSection.objects.all()
-    async for section in sections:
-        kb.button(text=section.reason[:50], callback_data=f'support_section_{section.pk}')
-    kb.adjust(1)
-
-    await msg.answer('Разделы технической поддержки', reply_markup=kb.as_markup())
+    await msg.answer(
+        'Разделы технической поддержки',
+        reply_markup=await keyboard_from_queryset(
+            SupportSection,
+            'support_section'
+        )
+    )
 
 
 @router.callback_query(F.data.startswith('support_section'))
@@ -29,6 +30,7 @@ async def solution(query: CallbackQuery, state: FSMContext):
     support_section_message_id = await state.get_value('support_section_message_id')
     section = await SupportSection.objects.aget(pk=int(query.data.split('_')[-1]))
     text = f'{section.reason}\n\n{section.solution}'
+    kb = one_button_keyboard(text='Мне нужен менеджер', callback_data='manager_needed')
 
     if support_section_message_id:
         try:
@@ -36,12 +38,18 @@ async def solution(query: CallbackQuery, state: FSMContext):
                 text,
                 query.message.business_connection_id,
                 query.message.chat.id,
-                support_section_message_id
+                support_section_message_id,
+                reply_markup=kb
             )
         except TelegramBadRequest:
             pass
     else:
-        support_section_message = await query.message.answer(text)
+        support_section_message = await query.message.answer(text, reply_markup=kb)
         await state.update_data(
             support_section_message_id=support_section_message.message_id,
         )
+
+
+@router.callback_query(F.data == 'manager_needed')
+async def manager_needed(query: CallbackQuery):
+    await query.message.answer(f'Телеграм аккаунт менеджера - {settings.MANAGER_URL}')

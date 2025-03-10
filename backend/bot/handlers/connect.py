@@ -3,6 +3,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery
 
+from bot.keyboards.utils import one_button_keyboard
 from bot.settings import settings
 from starlink.models import Client
 
@@ -12,34 +13,25 @@ router = Router()
 @router.message(Command('connect'))
 @router.message(F.text == 'Подключение тарелки')
 async def connect(msg: Message):
-    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text='Оплатить', callback_data='pay_connection')]
-        ]
+    await msg.answer(
+        'Подключение тарелки стоит 5000 ₽',
+        reply_markup=one_button_keyboard(text='Оплатить', callback_data='pay_connection')
     )
-
-    await msg.answer('Подключение тарелки стоит 5000 ₽', reply_markup=kb)
 
 
 @router.callback_query(F.data == 'pay_connection')
 async def pay_connection(query: CallbackQuery):
-    from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text='Я оплатил', callback_data='check_connection_payment')]
-        ]
+    await query.message.answer(
+        'Ваша ссылка на оплату.',
+        reply_markup=one_button_keyboard(text='Я оплатил', callback_data='check_connection_payment'),
     )
-
-    await query.message.answer('Ваша ссылка на оплату.', reply_markup=kb)
 
 
 @router.callback_query(F.data == 'check_connection_payment')
 async def check_payment(query: CallbackQuery, state: FSMContext):
     client = await Client.objects.aget(pk=query.message.chat.id)
     payment_completed = True
+
     if payment_completed:
         text = (
             f'Подключение тарелки {client.kit_number}:\n'

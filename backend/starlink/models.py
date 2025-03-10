@@ -2,6 +2,7 @@ from aiogram import types
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
+from django.db.models import IntegerChoices, TextChoices
 
 
 class User(AbstractUser):
@@ -69,23 +70,41 @@ class Client(models.Model):
         return f'@{self.username}' if self.username else self.first_name
 
 
+class PaymentChoices(IntegerChoices):
+    REGISTERED = 0, 'Не оплачено'
+    ON_HOLD = 1, 'Предавторизованная сумма захолдирована (для двухстадийных платежей)'
+    SUCCESS = 2, 'Оплачено'
+    AUTH_CANCELLED = 3, 'Авторизация отменена'
+    REFUND = 4, 'Оформлен возврат'
+    ACS_AUTH = 5, 'Инициирована авторизация через ACS банка-эмитента'
+    AUTH_REJECTED = 6, 'Авторизация отклонена'
+
+
+class SubscriptionPlanChoices(TextChoices):
+    STANDARD = 'standard', 'Стандарт - 15 000 ₽/мес.'
+    FLAT = 'flat', 'Флэт - 63 000 ₽/мес.'
+    GLOBAL = 'global', 'Глобал - 49 000 ₽/мес.'
+
+
 class Payment(models.Model):
-    status = models.CharField(max_length=255)
-    created_at = models.DateTimeField(auto_now_add=True)
+    status = models.IntegerField(verbose_name='Статус', choices=PaymentChoices)
+    subscription_type = models.CharField(verbose_name='Тип подписки', max_length=255, choices=SubscriptionPlanChoices)
+    date = models.DateTimeField(verbose_name='Дата оплаты', null=True, blank=True)
+    client = models.ForeignKey(Client, models.CASCADE, 'payments', verbose_name='Пользователь')
     objects: models.Manager
 
     class Meta:
         verbose_name = 'Оплата'
         verbose_name_plural = 'Оплаты'
-        ordering = ['-created_at']
+        ordering = ['-date']
 
     def __str__(self):
         return self.status
 
 
 class SupportSection(models.Model):
-    reason = models.TextField()
-    solution = models.TextField()
+    reason = models.TextField(verbose_name='Причина')
+    solution = models.TextField(verbose_name='Решение')
     objects: models.Manager
 
     class Meta:
@@ -94,13 +113,13 @@ class SupportSection(models.Model):
         ordering = ['reason']
 
     def __str__(self):
-        return self.reason[:100]
+        return self.reason[:50]
 
 
 class Publication(models.Model):
-    text = models.TextField()
-    media = models.FileField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
+    text = models.TextField(verbose_name='Текст')
+    media = models.FileField(verbose_name='Фото или видео', null=True, blank=True)
+    created_at = models.DateTimeField(verbose_name='Дата создания', auto_now_add=True)
     objects: models.Manager
 
     class Meta:
@@ -110,3 +129,18 @@ class Publication(models.Model):
 
     def __str__(self):
         return self.text[:100]
+
+
+class Plate(models.Model):
+    model = models.CharField(verbose_name='Модель', max_length=255)
+    photo = models.ImageField(verbose_name='Фото', upload_to='starlink')
+    price = models.IntegerField(verbose_name='Цена')
+    description = models.TextField(verbose_name='Описание')
+
+    class Meta:
+        verbose_name = 'Тарелка'
+        verbose_name_plural = 'Тарелки'
+        ordering = ['model']
+
+    def __str__(self):
+        return self.model

@@ -1,10 +1,12 @@
 from aiogram import Router, F
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, InputMediaPhoto, ReplyKeyboardRemove
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot.keyboards.inline import check_payment_kb, plate_kb
+from bot.keyboards.reply import request_contact_kb
 from bot.settings import settings
 from bot.states import BuyingState
 
@@ -59,16 +61,19 @@ async def display_plate(query: CallbackQuery, state: FSMContext):
     caption = f'{plate["model"]}\n\n{plate["description"]}'
 
     if plate_message_id:
-        await query.bot.edit_message_media(
-            InputMediaPhoto(
-                media=media,
-                caption=caption,
-            ),
-            query.message.business_connection_id,
-            query.message.chat.id,
-            plate_message_id,
-            reply_markup=plate_kb,
-        )
+        try:
+            await query.bot.edit_message_media(
+                InputMediaPhoto(
+                    media=media,
+                    caption=caption,
+                ),
+                query.message.business_connection_id,
+                query.message.chat.id,
+                plate_message_id,
+                reply_markup=plate_kb,
+            )
+        except TelegramBadRequest:
+            pass
     else:
         plate_message = await query.message.reply_photo(
             media,
@@ -80,14 +85,14 @@ async def display_plate(query: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == 'buy_plate')
 async def buy_plate(query: CallbackQuery, state: FSMContext):
-    await query.message.answer('Укажите ФИО')
+    await query.message.answer('Укажите имя (как к вам обращаться)')
     await state.set_state(BuyingState.fullname)
 
 
 @router.message(F.text, StateFilter(BuyingState.fullname))
 async def set_fullname(msg: Message, state: FSMContext):
     await state.update_data(fullname=msg.text)
-    await msg.answer('Укажите номер телефона')
+    await msg.answer('Укажите номер телефона', reply_markup=request_contact_kb)
     await state.set_state(BuyingState.phone)
 
 
@@ -116,7 +121,7 @@ async def check_payment(query: CallbackQuery, state: FSMContext):
             f'Телефон: {data["phone"]}\n'
         )
         if query.message.from_user.username:
-            text += f'Юзернейм: @{query.message.from_user.username}'
+            text += f'Юзернейм: @{query.message.chat.username}'
 
         await query.bot.send_message(settings.FORWARD_CHAT_ID, text)
         await query.message.answer(

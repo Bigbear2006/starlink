@@ -12,7 +12,7 @@ async def main():
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
     django.setup()
 
-    from bot.handlers import commands, auth, buy, connect, faq, support
+    from bot.handlers import commands, auth, buy, connect, faq, support, subscription
 
     dp.include_routers(
         commands.router,
@@ -21,6 +21,7 @@ async def main():
         connect.router,
         faq.router,
         support.router,
+        subscription.router,
     )
     dp.message.filter(F.chat.type == 'private')
 
@@ -28,9 +29,13 @@ async def main():
     await bot.set_my_commands(
         [
             BotCommand(command='/start', description='Запустить бота'),
+            BotCommand(command='/menu', description='Главное меню'),
             BotCommand(command='/auth', description='Авторизоваться по кит номеру тарелки'),
             BotCommand(command='/buy', description='Приобрести тарелку'),
-            BotCommand(command='/menu', description='Главное меню'),
+            BotCommand(command='/connect', description='Подключить тарелку'),
+            BotCommand(command='/subscription', description='Сроки подключения и абонентская плата'),
+            BotCommand(command='/support', description='Техническая поддержка'),
+            BotCommand(command='/faq', description='FAQ'),
         ],
     )
 

@@ -1,9 +1,16 @@
 from urllib.parse import unquote
-from aiogram import Router, F
+
+from aiogram import F, Router
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery, InputMediaPhoto, ReplyKeyboardRemove, BufferedInputFile
+from aiogram.types import (
+    BufferedInputFile,
+    CallbackQuery,
+    InputMediaPhoto,
+    Message,
+    ReplyKeyboardRemove,
+)
 
 from bot.keyboards.inline import plate_kb
 from bot.keyboards.reply import request_contact_kb
@@ -21,7 +28,7 @@ async def buy(msg: Message, state: FSMContext):
 
     await msg.answer(
         'Тарелки',
-        reply_markup=await keyboard_from_queryset(Plate, 'plate')
+        reply_markup=await keyboard_from_queryset(Plate, 'plate'),
     )
 
 
@@ -80,12 +87,18 @@ async def set_phone(msg: Message, state: FSMContext):
 
     await msg.answer(
         'Ваша ссылка на оплату.',
-        reply_markup=one_button_keyboard(text='Я оплатил', callback_data='check_buying_payment')
+        reply_markup=one_button_keyboard(
+            text='Я оплатил',
+            callback_data='check_buying_payment',
+        ),
     )
     await state.set_state(BuyingState.buying)
 
 
-@router.callback_query(F.data == 'check_buying_payment', StateFilter(BuyingState.buying))
+@router.callback_query(
+    F.data == 'check_buying_payment',
+    StateFilter(BuyingState.buying),
+)
 async def check_buying_payment(query: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     plate = await Plate.objects.aget(pk=data['plate_id'])
@@ -104,13 +117,13 @@ async def check_buying_payment(query: CallbackQuery, state: FSMContext):
         await query.message.answer(
             'Готово, в ближайшее время с вами свяжется менеджер '
             'для уточнения деталей доставки.',
-            reply_markup=ReplyKeyboardRemove()
+            reply_markup=ReplyKeyboardRemove(),
         )
         await state.clear()
     else:
         await query.message.answer(
             'К сожалению оплата не прошла.\n'
             'Нажмите /menu, чтобы вернуться в меню',
-            reply_markup=ReplyKeyboardRemove()
+            reply_markup=ReplyKeyboardRemove(),
         )
 

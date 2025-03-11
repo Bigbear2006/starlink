@@ -11,7 +11,9 @@ router = Router()
 
 @router.message(Command('start'))
 async def start(msg: Message):
-    client, created = await Client.objects.create_or_update_from_tg_user(msg.from_user)
+    client, created = await Client.objects.create_or_update_from_tg_user(
+        msg.from_user,
+    )
     if created:
         logger.info(f'New client {client} id={client.pk} was created')
     else:
@@ -21,6 +23,6 @@ async def start(msg: Message):
 
 
 @router.message(Command('menu'))
-async def start(msg: Message, state: FSMContext):
+async def menu(msg: Message, state: FSMContext):
     await state.clear()
     await msg.answer('Главное меню')

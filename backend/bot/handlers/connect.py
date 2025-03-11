@@ -1,7 +1,7 @@
-from aiogram import Router, F
+from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import CallbackQuery, Message
 
 from bot.keyboards.utils import one_button_keyboard
 from bot.settings import settings
@@ -15,7 +15,10 @@ router = Router()
 async def connect(msg: Message):
     await msg.answer(
         'Подключение тарелки стоит 5000 ₽',
-        reply_markup=one_button_keyboard(text='Оплатить', callback_data='pay_connection')
+        reply_markup=one_button_keyboard(
+            text='Оплатить',
+            callback_data='pay_connection',
+        ),
     )
 
 
@@ -23,7 +26,10 @@ async def connect(msg: Message):
 async def pay_connection(query: CallbackQuery):
     await query.message.answer(
         'Ваша ссылка на оплату.',
-        reply_markup=one_button_keyboard(text='Я оплатил', callback_data='check_connection_payment'),
+        reply_markup=one_button_keyboard(
+            text='Я оплатил',
+            callback_data='check_connection_payment',
+        ),
     )
 
 

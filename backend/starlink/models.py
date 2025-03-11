@@ -56,12 +56,22 @@ class Client(models.Model):
         null=True,
         blank=True,
     )
-    username = models.CharField(verbose_name='Ник', max_length=32, null=True, blank=True)
+    username = models.CharField(
+        verbose_name='Ник',
+        max_length=32,
+        null=True,
+        blank=True,
+    )
     is_premium = models.BooleanField(
         verbose_name='Есть премиум',
         default=False,
     )
-    kit_number = models.CharField(verbose_name='Кит номер тарелки', max_length=255, null=True, blank=True)
+    kit_number = models.CharField(
+        verbose_name='Кит номер тарелки',
+        max_length=255,
+        null=True,
+        blank=True,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     objects = ClientManager()
 
@@ -76,7 +86,8 @@ class Client(models.Model):
 
 class PaymentChoices(IntegerChoices):
     REGISTERED = 0, 'Не оплачено'
-    ON_HOLD = 1, 'Предавторизованная сумма захолдирована (для двухстадийных платежей)'
+    ON_HOLD = 1, 'Предавторизованная сумма захолдирована ' \
+                 '(для двухстадийных платежей)'
     SUCCESS = 2, 'Оплачено'
     AUTH_CANCELLED = 3, 'Авторизация отменена'
     REFUND = 4, 'Оформлен возврат'
@@ -92,9 +103,22 @@ class SubscriptionPlanChoices(TextChoices):
 
 class Payment(models.Model):
     status = models.IntegerField(verbose_name='Статус', choices=PaymentChoices)
-    subscription_plan = models.CharField(verbose_name='Тип подписки', max_length=255, choices=SubscriptionPlanChoices)
-    date = models.DateTimeField(verbose_name='Дата оплаты', null=True, blank=True)
-    client = models.ForeignKey(Client, models.CASCADE, 'payments', verbose_name='Пользователь')
+    subscription_plan = models.CharField(
+        verbose_name='Тип подписки',
+        max_length=255,
+        choices=SubscriptionPlanChoices,
+    )
+    date = models.DateTimeField(
+        verbose_name='Дата оплаты',
+        null=True,
+        blank=True,
+    )
+    client = models.ForeignKey(
+        Client,
+        models.CASCADE,
+        'payments',
+        verbose_name='Пользователь',
+    )
     objects: models.Manager
 
     class Meta:
@@ -123,8 +147,15 @@ class SupportSection(models.Model):
 
 class Publication(models.Model):
     text = models.TextField(verbose_name='Текст')
-    media = models.FileField(verbose_name='Фото или видео', null=True, blank=True)
-    created_at = models.DateTimeField(verbose_name='Дата создания', auto_now_add=True)
+    media = models.FileField(
+        verbose_name='Фото или видео',
+        null=True,
+        blank=True,
+    )
+    created_at = models.DateTimeField(
+        verbose_name='Дата создания',
+        auto_now_add=True,
+    )
     objects: models.Manager
 
     class Meta:

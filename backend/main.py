@@ -12,7 +12,15 @@ async def main():
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
     django.setup()
 
-    from bot.handlers import commands, auth, buy, connect, faq, support, subscription
+    from bot.handlers import (
+        auth,
+        buy,
+        commands,
+        connect,
+        faq,
+        subscription,
+        support,
+    )
 
     dp.include_routers(
         commands.router,
@@ -30,11 +38,20 @@ async def main():
         [
             BotCommand(command='/start', description='Запустить бота'),
             BotCommand(command='/menu', description='Главное меню'),
-            BotCommand(command='/auth', description='Авторизоваться по кит номеру тарелки'),
+            BotCommand(
+                command='/auth',
+                description='Авторизоваться по кит номеру тарелки',
+            ),
             BotCommand(command='/buy', description='Приобрести тарелку'),
             BotCommand(command='/connect', description='Подключить тарелку'),
-            BotCommand(command='/subscription', description='Сроки подключения и абонентская плата'),
-            BotCommand(command='/support', description='Техническая поддержка'),
+            BotCommand(
+                command='/subscription',
+                description='Сроки подключения и абонентская плата',
+            ),
+            BotCommand(
+                command='/support',
+                description='Техническая поддержка',
+            ),
             BotCommand(command='/faq', description='FAQ'),
         ],
     )

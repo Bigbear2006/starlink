@@ -1,8 +1,12 @@
+from datetime import datetime
+
 from aiogram import types
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import IntegerChoices, TextChoices
+
+from bot.settings import settings
 
 
 class User(AbstractUser):
@@ -88,7 +92,7 @@ class SubscriptionPlanChoices(TextChoices):
 
 class Payment(models.Model):
     status = models.IntegerField(verbose_name='Статус', choices=PaymentChoices)
-    subscription_type = models.CharField(verbose_name='Тип подписки', max_length=255, choices=SubscriptionPlanChoices)
+    subscription_plan = models.CharField(verbose_name='Тип подписки', max_length=255, choices=SubscriptionPlanChoices)
     date = models.DateTimeField(verbose_name='Дата оплаты', null=True, blank=True)
     client = models.ForeignKey(Client, models.CASCADE, 'payments', verbose_name='Пользователь')
     objects: models.Manager
@@ -99,7 +103,8 @@ class Payment(models.Model):
         ordering = ['-date']
 
     def __str__(self):
-        return self.status
+        return f'{datetime.strftime(self.date, settings.DATE_FMT)} ' \
+               f'({PaymentChoices(self.status).label})'
 
 
 class SupportSection(models.Model):

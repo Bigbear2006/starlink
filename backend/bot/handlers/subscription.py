@@ -11,7 +11,7 @@ from pytz import timezone
 from bot.keyboards.inline import subscription_plans_kb
 from bot.keyboards.utils import one_button_keyboard
 from bot.settings import settings
-from starlink.models import Payment, PaymentChoices, SubscriptionPlanChoices
+from starlink.models import Payment, PaymentStatusChoices, SubscriptionPlanChoices
 
 router = Router()
 
@@ -22,17 +22,17 @@ async def display_subscription_plans(msg: Message, state: FSMContext):
     try:
         earliest_payment = await Payment.objects.filter(
             client_id=msg.chat.id,
-            status=PaymentChoices.SUCCESS,
+            status=PaymentStatusChoices.SUCCESS,
         ).aearliest('date')
 
         last_payment = await Payment.objects.filter(
             client_id=msg.chat.id,
-            status=PaymentChoices.SUCCESS,
+            status=PaymentStatusChoices.SUCCESS,
         ).alatest('date')
 
         payments_count = await Payment.objects.filter(
             client_id=msg.chat.id,
-            status=PaymentChoices.SUCCESS,
+            status=PaymentStatusChoices.SUCCESS,
         ).acount()
 
         subscription_end: datetime = earliest_payment.date + \
@@ -88,7 +88,7 @@ async def check_subscription_buying(query: CallbackQuery, state: FSMContext):
     if check_payment:
         await Payment.objects.acreate(
             client_id=query.message.chat.id,
-            status=PaymentChoices.SUCCESS,
+            status=PaymentStatusChoices.SUCCESS,
             subscription_plan=await state.get_value('subscription_plan'),
             date=datetime.now(timezone(conf.settings.TIME_ZONE)),
         )
@@ -117,7 +117,7 @@ async def check_subscription_prolonging(
     if check_payment:
         await Payment.objects.acreate(
             client_id=query.message.chat.id,
-            status=PaymentChoices.SUCCESS,
+            status=PaymentStatusChoices.SUCCESS,
             subscription_plan=await state.get_value('subscription_plan'),
             date=datetime.now(timezone(conf.settings.TIME_ZONE)),
         )

@@ -12,12 +12,13 @@ from aiogram.types import (
     ReplyKeyboardRemove,
 )
 
+from bot.api import alfa
 from bot.keyboards.inline import plate_kb
 from bot.keyboards.reply import request_contact_kb
 from bot.keyboards.utils import keyboard_from_queryset, one_button_keyboard
 from bot.settings import settings
 from bot.states import BuyingState
-from starlink.models import Plate
+from starlink.models import Plate, PaymentStatusChoices
 
 router = Router()
 
@@ -85,8 +86,12 @@ async def set_phone(msg: Message, state: FSMContext):
     else:
         await state.update_data(phone=msg.text)
 
+    plate = await Plate.objects.aget(pk=await state.get_value('plate_id'))
+    order_data = await alfa.register_order(plate.price * 100)
+
+    await state.update_data(order_id=order_data['orderId'])
     await msg.answer(
-        'Ваша ссылка на оплату.',
+        f'Ваша ссылка на оплату:\n{order_data["formUrl"]}',
         reply_markup=one_button_keyboard(
             text='Я оплатил',
             callback_data='check_buying_payment',
@@ -103,8 +108,8 @@ async def check_buying_payment(query: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     plate = await Plate.objects.aget(pk=data['plate_id'])
 
-    payment_completed = True
-    if payment_completed:
+    order_data = await alfa.get_order_status(data['order_id'])
+    if order_data.get('OrderStatus', 0) == PaymentStatusChoices.SUCCESS:
         text = (
             f'Покупка тарелки {plate.model}\n\n'
             f'Данные покупателя:\n'
@@ -126,4 +131,3 @@ async def check_buying_payment(query: CallbackQuery, state: FSMContext):
             'Нажмите /menu, чтобы вернуться в меню',
             reply_markup=ReplyKeyboardRemove(),
         )
-

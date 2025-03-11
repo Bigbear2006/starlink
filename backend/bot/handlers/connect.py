@@ -3,9 +3,10 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
+from bot.api import alfa
 from bot.keyboards.utils import one_button_keyboard
 from bot.settings import settings
-from starlink.models import Client
+from starlink.models import Client, PaymentStatusChoices
 
 router = Router()
 
@@ -23,9 +24,12 @@ async def connect(msg: Message):
 
 
 @router.callback_query(F.data == 'pay_connection')
-async def pay_connection(query: CallbackQuery):
+async def pay_connection(query: CallbackQuery, state: FSMContext):
+    order_data = await alfa.register_order(5000 * 100)
+
+    await state.update_data(order_id=order_data['orderId'])
     await query.message.answer(
-        'Ваша ссылка на оплату.',
+        f'Ваша ссылка на оплату. {order_data["formUrl"]}',
         reply_markup=one_button_keyboard(
             text='Я оплатил',
             callback_data='check_connection_payment',
@@ -36,12 +40,10 @@ async def pay_connection(query: CallbackQuery):
 @router.callback_query(F.data == 'check_connection_payment')
 async def check_payment(query: CallbackQuery, state: FSMContext):
     client = await Client.objects.aget(pk=query.message.chat.id)
-    payment_completed = True
+    order_data = await alfa.get_order_status(await state.get_value('order_id'))
 
-    if payment_completed:
-        text = (
-            f'Подключение тарелки {client.kit_number}:\n'
-        )
+    if order_data.get('OrderStatus', 0) == PaymentStatusChoices.SUCCESS:
+        text = f'Подключение тарелки {client.kit_number}.\n'
         if query.message.from_user.username:
             text += f'Юзернейм пользователя: @{query.message.chat.username}'
 

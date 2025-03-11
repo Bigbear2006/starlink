@@ -84,7 +84,7 @@ class Client(models.Model):
         return f'@{self.username}' if self.username else self.first_name
 
 
-class PaymentChoices(IntegerChoices):
+class PaymentStatusChoices(IntegerChoices):
     REGISTERED = 0, 'Не оплачено'
     ON_HOLD = 1, 'Предавторизованная сумма захолдирована ' \
                  '(для двухстадийных платежей)'
@@ -102,7 +102,7 @@ class SubscriptionPlanChoices(TextChoices):
 
 
 class Payment(models.Model):
-    status = models.IntegerField(verbose_name='Статус', choices=PaymentChoices)
+    status = models.IntegerField(verbose_name='Статус', choices=PaymentStatusChoices)
     subscription_plan = models.CharField(
         verbose_name='Тип подписки',
         max_length=255,
@@ -128,7 +128,7 @@ class Payment(models.Model):
 
     def __str__(self):
         return f'{datetime.strftime(self.date, settings.DATE_FMT)} ' \
-               f'({PaymentChoices(self.status).label})'
+               f'({PaymentStatusChoices(self.status).label})'
 
 
 class SupportSection(models.Model):

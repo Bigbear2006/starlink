@@ -29,7 +29,7 @@ async def pay_connection(query: CallbackQuery, state: FSMContext):
 
     await state.update_data(order_id=order_data['orderId'])
     await query.message.answer(
-        f'Ваша ссылка на оплату. {order_data["formUrl"]}',
+        f'Ваша ссылка на оплату:\n{order_data["formUrl"]}',
         reply_markup=one_button_keyboard(
             text='Я оплатил',
             callback_data='check_connection_payment',

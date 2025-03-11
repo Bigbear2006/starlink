@@ -62,5 +62,6 @@ async def solution(query: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == 'manager_needed')
 async def manager_needed(query: CallbackQuery):
     await query.message.answer(
-        f'Телеграм аккаунт менеджера - {settings.MANAGER_URL}',
+        f'Телеграм аккаунт менеджера - {settings.MANAGER_URL}\n'
+        f'Выйти в меню - /menu',
     )

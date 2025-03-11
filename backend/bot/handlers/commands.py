@@ -19,10 +19,15 @@ async def start(msg: Message):
     else:
         logger.info(f'Client {client} id={client.pk} was updated')
 
-    await msg.answer(f'Привет, {msg.from_user.full_name}!')
+    await msg.answer(
+        f'Привет, {msg.from_user.full_name}!\n'
+        f'Я бот для покупки и обслуживания тарелок Starlink.\n\n'
+        f'/buy - купить тарелку\n'
+        f'/auth - авторизоваться по KIT номеру тарелки',
+    )
 
 
 @router.message(Command('menu'))
 async def menu(msg: Message, state: FSMContext):
     await state.clear()
-    await msg.answer('Главное меню')
+    await msg.answer('Вы перешли в главное меню.')

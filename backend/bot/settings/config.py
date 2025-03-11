@@ -31,6 +31,7 @@ class Settings:
     KIT_NUMBERS_LIST: list[str] = field(default_factory=load_kit_numbers_list)
 
     DATE_FMT: str = field(default='%d.%m.%Y %H:%M')
+    SHORT_TIME_FMT: str = field(default='%H:%M')
     TZ: timezone = field(
         default_factory=lambda: timezone('Europe/Moscow'),
     )

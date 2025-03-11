@@ -96,9 +96,19 @@ class PaymentStatusChoices(IntegerChoices):
 
 
 class SubscriptionPlanChoices(TextChoices):
-    STANDARD = 'standard', 'Стандарт - 15 000 ₽/мес.'
-    FLAT = 'flat', 'Флэт - 63 000 ₽/мес.'
-    GLOBAL = 'global', 'Глобал - 49 000 ₽/мес.'
+    STANDARD = 'standard', 'Стандарт - 15 000 ₽/мес'
+    FLAT = 'flat', 'Флэт - 63 000 ₽/мес'
+    GLOBAL = 'global', 'Глобал - 49 000 ₽/мес'
+
+    def get_price(self) -> int:
+        if self.value == self.STANDARD:
+            return 15_000
+        elif self.value == self.FLAT:
+            return 63_000
+        elif self.value == self.GLOBAL:
+            return 49_000
+        else:
+            raise ValueError(f'{self.value} is not a valid subscription plan')
 
 
 class Payment(models.Model):

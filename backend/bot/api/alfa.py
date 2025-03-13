@@ -13,7 +13,7 @@ async def register_order(amount: int) -> dict:
             'password': settings.ALFA_PASSWORD,
             'orderNumber': uuid4(),
             'amount': amount,
-            'returnUrl': settings.ALFA_RETURN_URL
+            'returnUrl': settings.ALFA_RETURN_URL,
         }
         async with session.post('register.do', data=data) as rsp:
             data = await rsp.json()

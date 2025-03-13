@@ -43,16 +43,16 @@ async def main():
                 description='Авторизоваться по кит номеру тарелки',
             ),
             BotCommand(command='/buy', description='Приобрести тарелку'),
-            # BotCommand(command='/connect', description='Подключить тарелку'),
-            # BotCommand(
-            #     command='/subscription',
-            #     description='Сроки подключения и абонентская плата',
-            # ),
-            # BotCommand(
-            #     command='/support',
-            #     description='Техническая поддержка',
-            # ),
-            # BotCommand(command='/faq', description='FAQ'),
+            BotCommand(command='/connect', description='Подключить тарелку'),
+            BotCommand(
+                command='/subscription',
+                description='Сроки подключения и абонентская плата',
+            ),
+            BotCommand(
+                command='/support',
+                description='Техническая поддержка',
+            ),
+            BotCommand(command='/faq', description='FAQ'),
         ],
     )
 

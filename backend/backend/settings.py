@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 
+from celery.schedules import crontab
 from environs import Env
 
 env = Env()
@@ -87,6 +88,14 @@ DATABASES = {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
     },
+    'postgresql': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': env('POSTGRES_DB'),
+        'USER': env('POSTGRES_USER'),
+        'PASSWORD': env('POSTGRES_PASSWORD'),
+        'HOST': 'db',
+        'PORT': 5432,
+    },
 }
 
 
@@ -142,3 +151,16 @@ MEDIA_ROOT = 'media'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'starlink.User'
+
+CELERY_BROKER_URL = env('CELERY_BROKER_URL')
+
+CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND')
+
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = False
+
+CELERY_BEAT_SCHEDULE = {
+    'send_reminders': {
+        'task': 'starlink.tasks.send_reminders',
+        'schedule': crontab(minute='*/1'),
+    },
+}

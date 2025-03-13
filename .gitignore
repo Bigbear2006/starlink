@@ -5,8 +5,13 @@ __pycache__
 data
 static
 media
+letsencrypt
+webroot
+logs
+scripts
 
 db.sqlite3
 .env
 StarlinkM.xlsx
 kit_numbers.json
+celerybeat-schedule

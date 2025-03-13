@@ -18,7 +18,7 @@ from bot.keyboards.reply import request_contact_kb
 from bot.keyboards.utils import keyboard_from_queryset, one_button_keyboard
 from bot.settings import settings
 from bot.states import BuyingState
-from starlink.models import Plate, PaymentStatusChoices
+from starlink.models import PaymentStatusChoices, Plate
 
 router = Router()
 

@@ -112,7 +112,10 @@ class SubscriptionPlanChoices(TextChoices):
 
 
 class Payment(models.Model):
-    status = models.IntegerField(verbose_name='Статус', choices=PaymentStatusChoices)
+    status = models.IntegerField(
+        verbose_name='Статус',
+        choices=PaymentStatusChoices,
+    )
     subscription_plan = models.CharField(
         verbose_name='Тип подписки',
         max_length=255,
@@ -159,6 +162,7 @@ class Publication(models.Model):
     text = models.TextField(verbose_name='Текст')
     media = models.FileField(
         verbose_name='Фото или видео',
+        upload_to='publications',
         null=True,
         blank=True,
     )

@@ -10,7 +10,11 @@ from bot.api import alfa
 from bot.keyboards.inline import subscription_plans_kb
 from bot.keyboards.utils import one_button_keyboard
 from bot.settings import settings
-from starlink.models import Payment, PaymentStatusChoices, SubscriptionPlanChoices
+from starlink.models import (
+    Payment,
+    PaymentStatusChoices,
+    SubscriptionPlanChoices,
+)
 
 router = Router()
 
@@ -171,6 +175,8 @@ async def check_subscription_prolonging(
             subscription_plan=data['subscription_plan'],
             date=datetime.now(settings.TZ),
         )
-        await query.message.answer(f'Вы продлили подписку на {data["days_count"]} дней.')
+        await query.message.answer(
+            f'Вы продлили подписку на {data["days_count"]} дней.',
+        )
     else:
         await query.message.answer('К сожалению, оплата не прошла.')

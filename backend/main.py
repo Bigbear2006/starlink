@@ -23,12 +23,12 @@ async def main():
     )
 
     dp.include_routers(
+        commands.router,
         auth.router,
         buy.router,
-        commands.router,
         connect.router,
-        faq.router,
         subscription.router,
+        faq.router,
         support.router,
     )
     dp.message.filter(F.chat.type == 'private')

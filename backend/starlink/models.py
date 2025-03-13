@@ -125,7 +125,10 @@ class Client(models.Model):
         ordering = ['-created_at']
 
     def __str__(self):
-        return f'@{self.username}' if self.username else self.first_name
+        username = self.first_name
+        if self.username:
+            username += f' (@{self.username})'
+        return username
 
 
 class Payment(models.Model):

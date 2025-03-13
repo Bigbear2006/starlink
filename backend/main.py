@@ -38,15 +38,15 @@ async def main():
         [
             BotCommand(command='/start', description='Запустить бота'),
             BotCommand(command='/menu', description='Главное меню'),
-            BotCommand(
-                command='/auth',
-                description='Авторизоваться по кит номеру тарелки',
-            ),
-            BotCommand(command='/buy', description='Приобрести тарелку'),
             BotCommand(command='/connect', description='Подключить тарелку'),
             BotCommand(
                 command='/subscription',
                 description='Сроки подключения и абонентская плата',
+            ),
+            BotCommand(command='/buy', description='Приобрести тарелку'),
+            BotCommand(
+                command='/auth',
+                description='Авторизоваться по кит номеру тарелки',
             ),
             BotCommand(
                 command='/support',

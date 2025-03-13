@@ -3,7 +3,7 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from bot.keyboards.reply import after_auth_kb
+from bot.keyboards.reply import menu_kb
 from bot.settings import settings
 from bot.states import AuthState
 from starlink.models import Client
@@ -12,6 +12,7 @@ router = Router()
 
 
 @router.message(Command('auth'))
+@router.message(F.text == 'Авторизоваться')
 async def auth(msg: Message, state: FSMContext):
     client = await Client.objects.aget(pk=msg.from_user.id)
 
@@ -34,7 +35,7 @@ async def set_plate_number(msg: Message, state: FSMContext):
             .aupdate(kit_number=kit_number)
         await msg.answer(
             f'Вы успешно авторизовались по номеру тарелки {msg.text.upper()}',
-            reply_markup=after_auth_kb,
+            reply_markup=menu_kb,
         )
         await state.clear()
     else:

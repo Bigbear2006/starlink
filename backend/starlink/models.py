@@ -4,9 +4,41 @@ from aiogram import types
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
-from django.db.models import IntegerChoices, TextChoices
 
 from bot.settings import settings
+
+
+class PaymentStatusChoices(models.IntegerChoices):
+    REGISTERED = 0, 'Не оплачено'
+    ON_HOLD = 1, 'Предавторизованная сумма захолдирована ' \
+                 '(для двухстадийных платежей)'
+    SUCCESS = 2, 'Оплачено'
+    AUTH_CANCELLED = 3, 'Авторизация отменена'
+    REFUND = 4, 'Оформлен возврат'
+    ACS_AUTH = 5, 'Инициирована авторизация через ACS банка-эмитента'
+    AUTH_REJECTED = 6, 'Авторизация отклонена'
+
+
+class SubscriptionPlanChoices(models.TextChoices):
+    STANDARD = 'standard', 'Стандарт - 15 000 ₽/мес'
+    FLAT = 'flat', 'Флэт - 63 000 ₽/мес'
+    GLOBAL = 'global', 'Глобал - 49 000 ₽/мес'
+
+    def get_price(self) -> int:
+        if self.value == self.STANDARD:
+            return 15_000
+        elif self.value == self.FLAT:
+            return 63_000
+        elif self.value == self.GLOBAL:
+            return 49_000
+        else:
+            raise ValueError(f'{self.value} is not a valid subscription plan')
+
+
+class PaymentTypeChoices(models.TextChoices):
+    BUYING = 'buying', 'Покупка тарелки'
+    CONNECTION = 'connection', 'Подключение тарелки'
+    SUBSCRIPTION = 'subscription', 'Оплата подписки'
 
 
 class User(AbstractUser):
@@ -72,6 +104,18 @@ class Client(models.Model):
         null=True,
         blank=True,
     )
+    subscription_end = models.DateTimeField(
+        verbose_name='Дата окончания подписки',
+        null=True,
+        blank=True,
+    )
+    subscription_plan = models.CharField(
+        verbose_name='Тип подписки',
+        max_length=255,
+        choices=SubscriptionPlanChoices,
+        null=True,
+        blank=True,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     objects = ClientManager()
 
@@ -84,42 +128,15 @@ class Client(models.Model):
         return f'@{self.username}' if self.username else self.first_name
 
 
-class PaymentStatusChoices(IntegerChoices):
-    REGISTERED = 0, 'Не оплачено'
-    ON_HOLD = 1, 'Предавторизованная сумма захолдирована ' \
-                 '(для двухстадийных платежей)'
-    SUCCESS = 2, 'Оплачено'
-    AUTH_CANCELLED = 3, 'Авторизация отменена'
-    REFUND = 4, 'Оформлен возврат'
-    ACS_AUTH = 5, 'Инициирована авторизация через ACS банка-эмитента'
-    AUTH_REJECTED = 6, 'Авторизация отклонена'
-
-
-class SubscriptionPlanChoices(TextChoices):
-    STANDARD = 'standard', 'Стандарт - 15 000 ₽/мес'
-    FLAT = 'flat', 'Флэт - 63 000 ₽/мес'
-    GLOBAL = 'global', 'Глобал - 49 000 ₽/мес'
-
-    def get_price(self) -> int:
-        if self.value == self.STANDARD:
-            return 15_000
-        elif self.value == self.FLAT:
-            return 63_000
-        elif self.value == self.GLOBAL:
-            return 49_000
-        else:
-            raise ValueError(f'{self.value} is not a valid subscription plan')
-
-
 class Payment(models.Model):
+    type = models.CharField(
+        verbose_name='Тип оплаты',
+        choices=PaymentTypeChoices,
+        max_length=255,
+    )
     status = models.IntegerField(
         verbose_name='Статус',
         choices=PaymentStatusChoices,
-    )
-    subscription_plan = models.CharField(
-        verbose_name='Тип подписки',
-        max_length=255,
-        choices=SubscriptionPlanChoices,
     )
     date = models.DateTimeField(
         verbose_name='Дата оплаты',
@@ -140,8 +157,12 @@ class Payment(models.Model):
         ordering = ['-date']
 
     def __str__(self):
-        return f'{datetime.strftime(self.date, settings.DATE_FMT)} ' \
-               f'({PaymentStatusChoices(self.status).label})'
+        date_str = datetime.strftime(
+            self.date.astimezone(settings.TZ), settings.DATE_FMT,
+        )
+        _type = PaymentTypeChoices(self.type).label
+        status = PaymentStatusChoices(self.status).label
+        return f'[{date_str}] {self.client} - {_type} ({status})'
 
 
 class SupportSection(models.Model):

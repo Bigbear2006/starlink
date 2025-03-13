@@ -6,16 +6,10 @@ from aiogram.exceptions import TelegramBadRequest, TelegramRetryAfter
 from aiogram.types import BufferedInputFile
 from celery import shared_task
 from celery.utils.log import get_task_logger
-from django.db.models import (
-    Count,
-    DateTimeField,
-    OuterRef,
-    Subquery,
-)
 
 from bot.keyboards.utils import one_button_keyboard
 from bot.loader import bot
-from starlink.models import Client, Payment
+from starlink.models import Client
 
 task_logger = get_task_logger(__name__)
 
@@ -94,46 +88,27 @@ def send_reminders():
                 ),
             )
 
-        # three_days_ago = (datetime.now(settings.TZ)
-        # - timedelta(days=27)).date
-        # payments = Payment.objects.filter(date__date=three_days_ago)
-        # task_logger.info(
-        #     f'Found {len(payments)} payments that expires in three days',
-        # )
-        client_payments = Payment.objects.values('client').annotate(
-            earliest_payment=Subquery(
-                Payment.objects
-                .filter(client=OuterRef('client'))
-                .order_by('date')[:1]
-                .values('date'),
-                output_field=DateTimeField(),
-            ),
-            payments_count=Count('id'),
+        three_days_ahead = (datetime.utcnow() + timedelta(days=3)).date()
+        clients = Client.objects.filter(
+            subscription_end__date=three_days_ahead,
         )
 
-        clients_ids = []
-        async for i in client_payments:
-            subscription_end_date = (
-                i['earliest_payment']
-                 + timedelta(days=30 * i['payments_count'])
-            ).date()
-            # task_logger.info(
-            #     f'END: {subscription_end_date}; '
-            #     f'{subscription_end_date + timedelta(days=3)}'
-            #     f'{subscription_end_date + timedelta(days=3) ==
-            #     datetime.utcnow().date()}'
-            # )
-            if subscription_end_date + timedelta(days=3) == \
-                    datetime.utcnow().date():
-                clients_ids.append(i['client'])
+        try:
+            await asyncio.wait(
+                [
+                    asyncio.create_task(send_message(client.pk))
+                    async for client in clients
+                ],
+            )
 
-        task_logger.info(clients_ids)
-        await asyncio.wait(
-            [
-                asyncio.create_task(send_message(client_id))
-                for client_id in clients_ids
-            ],
-        )
+            task_logger.info(
+                f'Sending reminders to {len(clients)} clients',
+            )
+        except ValueError:
+            # if set of tasks/futures is empty
+            task_logger.info(
+                'There are no clients with subscription ends in three days.',
+            )
 
     loop = asyncio.get_event_loop()
     if loop.is_closed():

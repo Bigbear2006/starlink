@@ -162,5 +162,6 @@ CELERY_BEAT_SCHEDULE = {
     'send_reminders': {
         'task': 'starlink.tasks.send_reminders',
         'schedule': crontab(minute='*/1'),
+        # 'schedule': crontab(minute='0', hour='12'),
     },
 }

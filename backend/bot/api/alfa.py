@@ -6,12 +6,13 @@ from bot.loader import logger
 from bot.settings import settings
 
 
-async def register_order(amount: int) -> dict:
+async def register_order(amount: int, description: str = '') -> dict:
     async with ClientSession(settings.ALFA_BASE_URL) as session:
         data = {
             'userName': settings.ALFA_USERNAME,
             'password': settings.ALFA_PASSWORD,
             'orderNumber': uuid4(),
+            'description': description,
             'amount': amount,
             'returnUrl': settings.ALFA_RETURN_URL,
         }

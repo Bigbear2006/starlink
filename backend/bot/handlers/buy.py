@@ -1,3 +1,4 @@
+from datetime import datetime
 from urllib.parse import unquote
 
 from aiogram import F, Router
@@ -9,21 +10,26 @@ from aiogram.types import (
     CallbackQuery,
     InputMediaPhoto,
     Message,
-    ReplyKeyboardRemove,
 )
 
 from bot.api import alfa
 from bot.keyboards.inline import plate_kb
-from bot.keyboards.reply import request_contact_kb
+from bot.keyboards.reply import menu_kb, request_contact_kb
 from bot.keyboards.utils import keyboard_from_queryset, one_button_keyboard
 from bot.settings import settings
 from bot.states import BuyingState
-from starlink.models import PaymentStatusChoices, Plate
+from starlink.models import (
+    Payment,
+    PaymentStatusChoices,
+    PaymentTypeChoices,
+    Plate,
+)
 
 router = Router()
 
 
 @router.message(Command('buy'))
+@router.message(F.text == 'Купить тарелку')
 async def buy(msg: Message, state: FSMContext):
     await state.update_data(plate_message_id=None)
 
@@ -41,7 +47,11 @@ async def display_plate(query: CallbackQuery, state: FSMContext):
     plate_message_id = await state.get_value('plate_message_id')
 
     media = BufferedInputFile.from_file(unquote(plate.photo.url.lstrip('/')))
-    caption = f'{plate.model}\n\n{plate.description}'
+    caption = (
+        f'{plate.model}\n\n'
+        f'Цена: {plate.price}\n'
+        f'{plate.description}'
+    )
 
     if plate_message_id:
         try:
@@ -87,7 +97,10 @@ async def set_phone(msg: Message, state: FSMContext):
         await state.update_data(phone=msg.text)
 
     plate = await Plate.objects.aget(pk=await state.get_value('plate_id'))
-    order_data = await alfa.register_order(plate.price * 100)
+    order_data = await alfa.register_order(
+        plate.price * 100,
+        f'Покупка тарелки {plate.model}',
+    )
 
     await state.update_data(order_id=order_data['orderId'])
     await msg.answer(
@@ -110,6 +123,13 @@ async def check_buying_payment(query: CallbackQuery, state: FSMContext):
 
     order_data = await alfa.get_order_status(data['order_id'])
     if order_data.get('OrderStatus', 0) == PaymentStatusChoices.SUCCESS:
+        await Payment.objects.acreate(
+            client_id=query.message.chat.id,
+            status=PaymentStatusChoices.SUCCESS,
+            type=PaymentTypeChoices.BUYING,
+            date=datetime.now(settings.TZ),
+        )
+
         text = (
             f'Покупка тарелки {plate.model}\n\n'
             f'Данные покупателя:\n'
@@ -122,12 +142,12 @@ async def check_buying_payment(query: CallbackQuery, state: FSMContext):
         await query.message.answer(
             'Готово, в ближайшее время с вами свяжется менеджер '
             'для уточнения деталей доставки.',
-            reply_markup=ReplyKeyboardRemove(),
+            reply_markup=menu_kb,
         )
         await state.clear()
     else:
         await query.message.answer(
             'К сожалению оплата не прошла.\n'
             'Нажмите /menu, чтобы вернуться в меню',
-            reply_markup=ReplyKeyboardRemove(),
+            reply_markup=menu_kb,
         )

@@ -3,6 +3,7 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
+from bot.keyboards.reply import menu_kb
 from bot.loader import logger
 from starlink.models import Client
 
@@ -21,13 +22,12 @@ async def start(msg: Message):
 
     await msg.answer(
         f'Привет, {msg.from_user.full_name}!\n'
-        f'Я бот для покупки и обслуживания тарелок Starlink.\n\n'
-        f'/buy - купить тарелку\n'
-        f'/auth - авторизоваться по KIT номеру тарелки',
+        f'Я бот для покупки и обслуживания тарелок Starlink.',
+        reply_markup=menu_kb,
     )
 
 
 @router.message(Command('menu'))
 async def menu(msg: Message, state: FSMContext):
     await state.clear()
-    await msg.answer('Вы перешли в главное меню.')
+    await msg.answer('Вы перешли в главное меню.', reply_markup=menu_kb)

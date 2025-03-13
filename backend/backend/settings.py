@@ -85,10 +85,6 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    },
-    'postgresql': {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': env('POSTGRES_DB'),
         'USER': env('POSTGRES_USER'),
@@ -161,7 +157,6 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = False
 CELERY_BEAT_SCHEDULE = {
     'send_reminders': {
         'task': 'starlink.tasks.send_reminders',
-        'schedule': crontab(minute='*/1'),
-        # 'schedule': crontab(minute='0', hour='12'),
+        'schedule': crontab(minute='0', hour='12'),
     },
 }

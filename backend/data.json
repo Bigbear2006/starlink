@@ -1,0 +1,46 @@
+[
+{
+  "model": "starlink.plate",
+  "pk": 1,
+  "fields": {
+    "model": "Модель V3",
+    "photo": "starlink/starlink_v3.jpg",
+    "price": 24000,
+    "description": "Описание модели V3"
+  }
+},
+{
+  "model": "starlink.plate",
+  "pk": 2,
+  "fields": {
+    "model": "Модель V5",
+    "photo": "starlink/starlink_v5.jpg",
+    "price": 34000,
+    "description": "Описание модели V5"
+  }
+},
+{
+  "model": "starlink.supportsection",
+  "pk": 1,
+  "fields": {
+    "reason": "Не активирована подписка",
+    "solution": "Если обслуживание Starlink остановлено или отменено, вы можете управлять услугой ниже.\r\nЕсли вы купили Starlink не у нас, активируйте его."
+  }
+},
+{
+  "model": "starlink.supportsection",
+  "pk": 2,
+  "fields": {
+    "reason": "Перерывы в работе",
+    "solution": "Ожидаются перерывы в работе Starlink каждые 55 минут."
+  }
+},
+{
+  "model": "starlink.supportsection",
+  "pk": 3,
+  "fields": {
+    "reason": "Использование в зоне конфликта",
+    "solution": "Рекомендуем соблюдать осторожность, если вы используете Starlink в зоне конфликта."
+  }
+}
+]

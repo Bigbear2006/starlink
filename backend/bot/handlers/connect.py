@@ -1,11 +1,11 @@
 from datetime import datetime
 
 from aiogram import F, Router
-from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery
 
 from bot.api import alfa
+from bot.keyboards.inline import to_menu_kb
 from bot.keyboards.utils import one_button_keyboard
 from bot.settings import settings
 from starlink.models import (
@@ -18,13 +18,13 @@ from starlink.models import (
 router = Router()
 
 
-# @router.message(Command('connect'))
-# @router.message(F.text == 'Подключить тарелку')
 @router.callback_query(F.data == 'connect_command')
 async def connect(query: CallbackQuery):
     client = await Client.objects.aget(pk=query.message.chat.id)
     if not client.kit_number:
-        await query.message.answer('Сначала авторизуйтесь по KIT номеру тарелки.')
+        await query.message.answer(
+            'Сначала авторизуйтесь по KIT номеру тарелки.',
+        )
         return
 
     await query.message.answer(
@@ -72,10 +72,14 @@ async def check_payment(query: CallbackQuery, state: FSMContext):
             text += f'Юзернейм пользователя: @{query.message.chat.username}'
 
         await query.bot.send_message(settings.FORWARD_CHAT_ID, text)
-        await query.message.answer('Готово, вашу тарелку скоро подключат.')
+        await query.message.answer(
+            'Готово, вашу тарелку скоро подключат.',
+            reply_markup=to_menu_kb,
+        )
         await state.clear()
     else:
         await query.message.answer(
             'К сожалению, оплата не прошла.',
+            reply_markup=to_menu_kb,
         )
 

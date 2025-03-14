@@ -1,13 +1,12 @@
 from datetime import datetime, timedelta
 
 from aiogram import F, Router
-from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery
 from django.core.exceptions import ObjectDoesNotExist
 
 from bot.api import alfa
-from bot.keyboards.inline import subscription_plans_kb
+from bot.keyboards.inline import subscription_plans_kb, to_menu_kb
 from bot.keyboards.utils import one_button_keyboard
 from bot.settings import settings
 from starlink.models import (
@@ -21,8 +20,6 @@ from starlink.models import (
 router = Router()
 
 
-# @router.message(Command('subscription'))
-# @router.message(F.text == 'Сроки подключения и абонентская плата')
 @router.callback_query(F.data == 'subscription_command')
 async def subscription_info(query: CallbackQuery, state: FSMContext):
     client = await Client.objects.aget(pk=query.message.chat.id)
@@ -99,7 +96,10 @@ async def subscription_info(query: CallbackQuery, state: FSMContext):
             ),
         )
     else:
-        await query.message.answer('Выберите тариф:', reply_markup=subscription_plans_kb)
+        await query.message.answer(
+            'Выберите тариф:',
+            reply_markup=subscription_plans_kb,
+        )
 
 
 @router.callback_query(F.data.in_(SubscriptionPlanChoices.values))
@@ -149,9 +149,13 @@ async def check_subscription_buying(query: CallbackQuery, state: FSMContext):
         await query.message.answer(
             f'Вы купили подписку '
             f'{SubscriptionPlanChoices(data["subscription_plan"]).label}.',
+            reply_markup=to_menu_kb,
         )
     else:
-        await query.message.answer('К сожалению, оплата не прошла.')
+        await query.message.answer(
+            'К сожалению, оплата не прошла.',
+            reply_markup=to_menu_kb,
+        )
 
 
 @router.callback_query(F.data == 'prolong_subscription')
@@ -206,6 +210,10 @@ async def check_subscription_prolonging(
 
         await query.message.answer(
             f'Вы продлили подписку на {days_count} дней.',
+            reply_markup=to_menu_kb,
         )
     else:
-        await query.message.answer('К сожалению, оплата не прошла.')
+        await query.message.answer(
+            'К сожалению, оплата не прошла.',
+            reply_markup=to_menu_kb,
+        )

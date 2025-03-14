@@ -1,10 +1,9 @@
 from aiogram import F, Router
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import CallbackQuery
 
 router = Router()
 
 
-# @router.message(F.text == 'FAQ')
 @router.callback_query(F.data == 'faq_command')
 async def faq(query: CallbackQuery):
     await query.message.answer(

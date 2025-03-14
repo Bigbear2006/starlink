@@ -4,22 +4,28 @@ authorized_kb = InlineKeyboardMarkup(
     inline_keyboard=[
         [
             InlineKeyboardButton(
+                text='Купить тарелку',
+                callback_data='buy_command',
+            ),
+        ],
+        [
+            InlineKeyboardButton(
                 text='Подключить тарелку',
                 callback_data='connect_command',
             ),
         ],
         [
             InlineKeyboardButton(
-                text='Сроки подключения и абонентская плата',
+                text='Абонентская плата',
                 callback_data='subscription_command',
             ),
         ],
         [
             InlineKeyboardButton(
-                text='Техническая поддержка',
-                callback_data='support_command'
+                text='Тех. поддержка',
+                callback_data='support_command',
             ),
+            InlineKeyboardButton(text='FAQ', callback_data='faq_command'),
         ],
-        [InlineKeyboardButton(text='FAQ', callback_data='faq_command')],
     ],
 )

@@ -13,9 +13,6 @@ lint.select = [
     "UP",  # pyupgrade
     "COM812",  # trailing comma
 ]
-lint.ignore = [
-    "B008" # Do not perform function call `Depends` in argument defaults
-]
 
 [tool.ruff.format]
 quote-style = "single"

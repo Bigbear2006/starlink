@@ -1,9 +1,9 @@
 from aiogram import F, Router
 from aiogram.exceptions import TelegramBadRequest
-from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message
+from aiogram.types import CallbackQuery
 
+from bot.keyboards.inline import to_menu_kb
 from bot.keyboards.utils import keyboard_from_queryset, one_button_keyboard
 from bot.settings import settings
 from starlink.models import SupportSection
@@ -11,8 +11,6 @@ from starlink.models import SupportSection
 router = Router()
 
 
-# @router.message(Command('support'))
-# @router.message(F.text == 'Техническая поддержка')
 @router.callback_query(F.data == 'support_command')
 async def support(query: CallbackQuery, state: FSMContext):
     await state.update_data(support_section_message_id=None)
@@ -63,6 +61,6 @@ async def solution(query: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data == 'manager_needed')
 async def manager_needed(query: CallbackQuery):
     await query.message.answer(
-        f'Телеграм аккаунт менеджера - {settings.MANAGER_URL}\n'
-        f'Выйти в меню - /menu',
+        f'Телеграм аккаунт менеджера - {settings.MANAGER_URL}',
+        reply_markup=to_menu_kb,
     )

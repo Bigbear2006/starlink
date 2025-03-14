@@ -3,7 +3,7 @@ from urllib.parse import unquote
 
 from aiogram import F, Router
 from aiogram.exceptions import TelegramBadRequest
-from aiogram.filters import Command, StateFilter
+from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import (
     BufferedInputFile,
@@ -13,8 +13,7 @@ from aiogram.types import (
 )
 
 from bot.api import alfa
-from bot.keyboards.inline import plate_kb, authorized_kb, unauthorized_kb, to_menu_kb
-from bot.keyboards.reply import request_contact_kb
+from bot.keyboards.inline import plate_kb, to_menu_kb
 from bot.keyboards.utils import keyboard_from_queryset, one_button_keyboard
 from bot.settings import settings
 from bot.states import BuyingState
@@ -22,14 +21,12 @@ from starlink.models import (
     Payment,
     PaymentStatusChoices,
     PaymentTypeChoices,
-    Plate, Client,
+    Plate,
 )
 
 router = Router()
 
 
-# @router.message(Command('buy'))
-# @router.message(F.text == 'Купить тарелку')
 @router.callback_query(F.data == 'buy_command')
 async def buy(query: CallbackQuery, state: FSMContext):
     await state.update_data(plate_message_id=None)
@@ -86,7 +83,7 @@ async def buy_plate(query: CallbackQuery, state: FSMContext):
 @router.message(F.text, StateFilter(BuyingState.fullname))
 async def set_fullname(msg: Message, state: FSMContext):
     await state.update_data(fullname=msg.text)
-    await msg.answer('Укажите номер телефона', reply_markup=request_contact_kb)
+    await msg.answer('Укажите номер телефона')
     await state.set_state(BuyingState.phone)
 
 
@@ -121,7 +118,6 @@ async def set_phone(msg: Message, state: FSMContext):
 async def check_buying_payment(query: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     plate = await Plate.objects.aget(pk=data['plate_id'])
-    client = await Client.objects.aget(pk=query.message.chat.id)
 
     order_data = await alfa.get_order_status(data['order_id'])
     if order_data.get('OrderStatus', 0) == PaymentStatusChoices.SUCCESS:
@@ -144,13 +140,11 @@ async def check_buying_payment(query: CallbackQuery, state: FSMContext):
         await query.message.answer(
             'Готово, в ближайшее время с вами свяжется менеджер '
             'для уточнения деталей доставки.',
-            reply_markup=authorized_kb
-            if client.kit_number else unauthorized_kb,
+            reply_markup=to_menu_kb,
         )
         await state.clear()
     else:
         await query.message.answer(
-            'К сожалению оплата не прошла.\n'
-            'Нажмите /menu, чтобы вернуться в меню',
+            'К сожалению оплата не прошла.',
             reply_markup=to_menu_kb,
         )

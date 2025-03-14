@@ -1,7 +1,7 @@
-from aiogram import Router, F
+from aiogram import F, Router
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove
 
 from bot.keyboards.inline import authorized_kb, unauthorized_kb
 from bot.loader import logger
@@ -27,7 +27,6 @@ async def start(msg: Message):
     )
 
 
-# @router.message(Command('menu'))
 @router.callback_query(F.data == 'to_menu_command')
 async def menu(query: CallbackQuery, state: FSMContext):
     client = await Client.objects.aget(pk=query.message.chat.id)
@@ -36,3 +35,8 @@ async def menu(query: CallbackQuery, state: FSMContext):
         'Вы перешли в главное меню.',
         reply_markup=authorized_kb if client.kit_number else unauthorized_kb,
     )
+
+
+@router.message(F.text == 'rm')
+async def rm(msg: Message):
+    await msg.answer('rm', reply_markup=ReplyKeyboardRemove())

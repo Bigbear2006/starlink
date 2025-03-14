@@ -39,12 +39,24 @@ async def connect(query: CallbackQuery):
 @router.callback_query(F.data == 'pay_connection')
 async def pay_connection(query: CallbackQuery, state: FSMContext):
     client = await Client.objects.aget(pk=query.message.chat.id)
-    order_data = await alfa.register_order(
-        5000 * 100,
-        f'Подключение тарелки {client.kit_number}',
+    description = f'Подключение тарелки {client.kit_number}'
+    order_data = await alfa.register_order(5000 * 100, description)
+
+    payment = await Payment.objects.acreate(
+        amount=5000,
+        description=description,
+        order_id=order_data['orderId'],
+        status=PaymentStatusChoices.REGISTERED,
+        type=PaymentTypeChoices.CONNECTION,
+        date=datetime.now(settings.TZ),
+        client_id=query.message.chat.id,
     )
 
-    await state.update_data(order_id=order_data['orderId'])
+    await state.update_data(
+        order_id=order_data['orderId'],
+        payment_pk=payment.pk,
+    )
+
     await query.message.answer(
         f'Ваша ссылка на оплату:\n{order_data["formUrl"]}',
         reply_markup=one_button_keyboard(
@@ -56,17 +68,16 @@ async def pay_connection(query: CallbackQuery, state: FSMContext):
 
 @router.callback_query(F.data == 'check_connection_payment')
 async def check_payment(query: CallbackQuery, state: FSMContext):
+    data = await state.get_data()
     client = await Client.objects.aget(pk=query.message.chat.id)
-    order_data = await alfa.get_order_status(await state.get_value('order_id'))
+    order_data = await alfa.get_order_status(data['order_id'])
+
+    await Payment.objects.filter(pk=data['payment_pk']).aupdate(
+        status=order_data.get('OrderStatus', 0),
+        date=datetime.now(settings.TZ),
+    )
 
     if order_data.get('OrderStatus', 0) == PaymentStatusChoices.SUCCESS:
-        await Payment.objects.acreate(
-            client_id=query.message.chat.id,
-            status=PaymentStatusChoices.SUCCESS,
-            type=PaymentTypeChoices.CONNECTION,
-            date=datetime.now(settings.TZ),
-        )
-
         text = f'Подключение тарелки {client.kit_number}.\n'
         if query.message.from_user.username:
             text += f'Юзернейм пользователя: @{query.message.chat.username}'

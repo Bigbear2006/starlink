@@ -10,13 +10,12 @@ from bot.settings import settings
 
 class PaymentStatusChoices(models.IntegerChoices):
     REGISTERED = 0, 'Не оплачено'
-    ON_HOLD = 1, 'Предавторизованная сумма захолдирована ' \
-                 '(для двухстадийных платежей)'
+    ON_HOLD = 1, 'Предавторизованная сумма захолдирована'
     SUCCESS = 2, 'Оплачено'
-    AUTH_CANCELLED = 3, 'Авторизация отменена'
+    AUTH_CANCELLED = 3, 'Отменено'
     REFUND = 4, 'Оформлен возврат'
     ACS_AUTH = 5, 'Инициирована авторизация через ACS банка-эмитента'
-    AUTH_REJECTED = 6, 'Авторизация отклонена'
+    AUTH_REJECTED = 6, 'Отклонено'
 
 
 class SubscriptionPlanChoices(models.TextChoices):
@@ -132,6 +131,18 @@ class Client(models.Model):
 
 
 class Payment(models.Model):
+    amount = models.IntegerField(verbose_name='Сумма')
+    description = models.CharField(
+        verbose_name='Описание',
+        max_length=100,
+        null=True,
+        blank=True,
+    )
+    order_id = models.UUIDField(
+        verbose_name='Уникальный ID заказа',
+        null=True,
+        blank=True,
+    )
     type = models.CharField(
         verbose_name='Тип оплаты',
         choices=PaymentTypeChoices,

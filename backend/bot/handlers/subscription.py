@@ -105,15 +105,28 @@ async def subscription_info(query: CallbackQuery, state: FSMContext):
 @router.callback_query(F.data.in_(SubscriptionPlanChoices.values))
 async def pay_subscription_plan(query: CallbackQuery, state: FSMContext):
     plan = SubscriptionPlanChoices(query.data)
+    description = f'Оплата подписки {plan.label} на 30 дней'
     order_data = await alfa.register_order(
         plan.get_price() * 100,
-        f'Оплата подписки {plan.label} на 30 дней',
+        description,
+    )
+
+    payment = await Payment.objects.acreate(
+        amount=plan.get_price(),
+        description=description,
+        order_id=order_data['orderId'],
+        status=PaymentStatusChoices.REGISTERED,
+        type=PaymentTypeChoices.SUBSCRIPTION,
+        date=datetime.now(settings.TZ),
+        client_id=query.message.chat.id,
     )
 
     await state.update_data(
         subscription_plan=plan.value,
         order_id=order_data['orderId'],
+        payment_pk=payment.pk,
     )
+
     await query.message.answer(
         f'Вы выбрали тариф {plan.label}.\n'
         f'Ваша ссылка на оплату:\n{order_data["formUrl"]}\n',
@@ -129,15 +142,13 @@ async def check_subscription_buying(query: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     order_data = await alfa.get_order_status(data['order_id'])
 
+    await Payment.objects.filter(pk=data['payment_pk']).aupdate(
+        status=order_data.get('OrderStatus', 0),
+        date=datetime.now(settings.TZ),
+    )
+
     if order_data.get('OrderStatus', 0) == PaymentStatusChoices.SUCCESS:
         now = datetime.now(settings.TZ)
-
-        await Payment.objects.acreate(
-            client_id=query.message.chat.id,
-            status=PaymentStatusChoices.SUCCESS,
-            type=PaymentTypeChoices.SUBSCRIPTION,
-            date=now,
-        )
 
         await Client.objects\
             .filter(pk=query.message.chat.id)\
@@ -163,15 +174,27 @@ async def prolong_subscription(query: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     plan = SubscriptionPlanChoices(data['subscription_plan'])
     days_count = data.get('days_count', 30)
+    description = f'Продление подписки {plan.label} на {days_count} дней'
 
     order_data = await alfa.register_order(
         plan.get_price() * days_count / 30 * 100,
-        f'Продление подписки {plan.label} на {days_count} дней',
+        description,
+    )
+
+    payment = await Payment.objects.acreate(
+        amount=plan.get_price() * days_count / 30,
+        description=description,
+        order_id=order_data['orderId'],
+        status=PaymentStatusChoices.REGISTERED,
+        type=PaymentTypeChoices.SUBSCRIPTION,
+        date=datetime.now(settings.TZ),
+        client_id=query.message.chat.id,
     )
 
     await state.update_data(
         subscription_plan=plan.value,
         order_id=order_data['orderId'],
+        payment_pk=payment.pk,
     )
 
     await query.message.answer(
@@ -193,14 +216,12 @@ async def check_subscription_prolonging(
     days_count = data.get('days_count', 30)
     order_data = await alfa.get_order_status(data['order_id'])
 
-    if order_data.get('OrderStatus', 0) == PaymentStatusChoices.SUCCESS:
-        await Payment.objects.acreate(
-            client_id=query.message.chat.id,
-            status=PaymentStatusChoices.SUCCESS,
-            type=PaymentTypeChoices.SUBSCRIPTION,
-            date=datetime.now(settings.TZ),
-        )
+    await Payment.objects.filter(pk=data['payment_pk']).aupdate(
+        status=order_data.get('OrderStatus', 0),
+        date=datetime.now(settings.TZ),
+    )
 
+    if order_data.get('OrderStatus', 0) == PaymentStatusChoices.SUCCESS:
         client = await Client.objects.aget(pk=query.message.chat.id)
         sub_end = client.subscription_end
 

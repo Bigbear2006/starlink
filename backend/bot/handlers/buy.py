@@ -95,12 +95,24 @@ async def set_phone(msg: Message, state: FSMContext):
         await state.update_data(phone=msg.text)
 
     plate = await Plate.objects.aget(pk=await state.get_value('plate_id'))
-    order_data = await alfa.register_order(
-        plate.price * 100,
-        f'Покупка тарелки {plate.model}',
+    description = f'Покупка тарелки {plate.model}'
+    order_data = await alfa.register_order(plate.price * 100, description)
+
+    payment = await Payment.objects.acreate(
+        amount=plate.price,
+        description=description,
+        order_id=order_data['orderId'],
+        status=PaymentStatusChoices.REGISTERED,
+        type=PaymentTypeChoices.BUYING,
+        date=datetime.now(settings.TZ),
+        client_id=msg.chat.id,
     )
 
-    await state.update_data(order_id=order_data['orderId'])
+    await state.update_data(
+        order_id=order_data['orderId'],
+        payment_pk=payment.pk,
+    )
+
     await msg.answer(
         f'Ваша ссылка на оплату:\n{order_data["formUrl"]}',
         reply_markup=one_button_keyboard(
@@ -118,16 +130,14 @@ async def set_phone(msg: Message, state: FSMContext):
 async def check_buying_payment(query: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     plate = await Plate.objects.aget(pk=data['plate_id'])
-
     order_data = await alfa.get_order_status(data['order_id'])
-    if order_data.get('OrderStatus', 0) == PaymentStatusChoices.SUCCESS:
-        await Payment.objects.acreate(
-            client_id=query.message.chat.id,
-            status=PaymentStatusChoices.SUCCESS,
-            type=PaymentTypeChoices.BUYING,
-            date=datetime.now(settings.TZ),
-        )
 
+    await Payment.objects.filter(pk=data['payment_pk']).aupdate(
+        status=order_data.get('OrderStatus', 0),
+        date=datetime.now(settings.TZ),
+    )
+
+    if order_data.get('OrderStatus', 0) == PaymentStatusChoices.SUCCESS:
         text = (
             f'Покупка тарелки {plate.model}\n\n'
             f'Данные покупателя:\n'

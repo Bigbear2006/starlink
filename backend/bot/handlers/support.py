@@ -11,12 +11,13 @@ from starlink.models import SupportSection
 router = Router()
 
 
-@router.message(Command('support'))
-@router.message(F.text == 'Техническая поддержка')
-async def support(msg: Message, state: FSMContext):
+# @router.message(Command('support'))
+# @router.message(F.text == 'Техническая поддержка')
+@router.callback_query(F.data == 'support_command')
+async def support(query: CallbackQuery, state: FSMContext):
     await state.update_data(support_section_message_id=None)
 
-    await msg.answer(
+    await query.message.answer(
         'Разделы технической поддержки',
         reply_markup=await keyboard_from_queryset(
             SupportSection,

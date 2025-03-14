@@ -1,7 +1,7 @@
 from aiogram import F, Router
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 
 from bot.keyboards.reply import menu_kb
 from bot.settings import settings
@@ -11,10 +11,11 @@ from starlink.models import Client
 router = Router()
 
 
-@router.message(Command('auth'))
-@router.message(F.text == 'Авторизоваться')
-async def auth(msg: Message, state: FSMContext):
-    client = await Client.objects.aget(pk=msg.from_user.id)
+# @router.message(Command('auth'))
+# @router.message(F.text == 'Авторизоваться')
+@router.callback_query(F.data == 'to_menu_command')
+async def auth(query: CallbackQuery, state: FSMContext):
+    client = await Client.objects.aget(pk=query.message.chat.id)
 
     text = (
         'Введите кит номер тарелки, чтобы авторизоваться.\n'
@@ -23,7 +24,7 @@ async def auth(msg: Message, state: FSMContext):
     if client.kit_number:
         text += f'Ваш текущий номер тарелки: {client.kit_number}'
 
-    await msg.answer(text)
+    await query.message.answer(text)
     await state.set_state(AuthState.plate_number)
 
 

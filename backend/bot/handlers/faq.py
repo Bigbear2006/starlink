@@ -1,12 +1,13 @@
 from aiogram import F, Router
-from aiogram.types import Message
+from aiogram.types import Message, CallbackQuery
 
 router = Router()
 
 
-@router.message(F.text == 'FAQ')
-async def faq(msg: Message):
-    await msg.answer(
+# @router.message(F.text == 'FAQ')
+@router.callback_query(F.data == 'faq_command')
+async def faq(query: CallbackQuery):
+    await query.message.answer(
         'Правила активации и оплаты спутниковой тарелки:\n\n'
 
         '1. Активация\n'

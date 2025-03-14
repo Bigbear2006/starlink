@@ -13,8 +13,8 @@ from aiogram.types import (
 )
 
 from bot.api import alfa
-from bot.keyboards.inline import plate_kb
-from bot.keyboards.reply import menu_kb, request_contact_kb
+from bot.keyboards.inline import plate_kb, authorized_kb, unauthorized_kb, to_menu_kb
+from bot.keyboards.reply import request_contact_kb
 from bot.keyboards.utils import keyboard_from_queryset, one_button_keyboard
 from bot.settings import settings
 from bot.states import BuyingState
@@ -22,18 +22,19 @@ from starlink.models import (
     Payment,
     PaymentStatusChoices,
     PaymentTypeChoices,
-    Plate,
+    Plate, Client,
 )
 
 router = Router()
 
 
-@router.message(Command('buy'))
-@router.message(F.text == 'Купить тарелку')
-async def buy(msg: Message, state: FSMContext):
+# @router.message(Command('buy'))
+# @router.message(F.text == 'Купить тарелку')
+@router.callback_query(F.data == 'buy_command')
+async def buy(query: CallbackQuery, state: FSMContext):
     await state.update_data(plate_message_id=None)
 
-    await msg.answer(
+    await query.message.answer(
         'Тарелки',
         reply_markup=await keyboard_from_queryset(Plate, 'plate'),
     )
@@ -120,6 +121,7 @@ async def set_phone(msg: Message, state: FSMContext):
 async def check_buying_payment(query: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     plate = await Plate.objects.aget(pk=data['plate_id'])
+    client = await Client.objects.aget(pk=query.message.chat.id)
 
     order_data = await alfa.get_order_status(data['order_id'])
     if order_data.get('OrderStatus', 0) == PaymentStatusChoices.SUCCESS:
@@ -142,12 +144,13 @@ async def check_buying_payment(query: CallbackQuery, state: FSMContext):
         await query.message.answer(
             'Готово, в ближайшее время с вами свяжется менеджер '
             'для уточнения деталей доставки.',
-            reply_markup=menu_kb,
+            reply_markup=authorized_kb
+            if client.kit_number else unauthorized_kb,
         )
         await state.clear()
     else:
         await query.message.answer(
             'К сожалению оплата не прошла.\n'
             'Нажмите /menu, чтобы вернуться в меню',
-            reply_markup=menu_kb,
+            reply_markup=to_menu_kb,
         )

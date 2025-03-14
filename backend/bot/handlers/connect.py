@@ -18,15 +18,16 @@ from starlink.models import (
 router = Router()
 
 
-@router.message(Command('connect'))
-@router.message(F.text == 'Подключить тарелку')
-async def connect(msg: Message):
-    client = await Client.objects.aget(pk=msg.chat.id)
+# @router.message(Command('connect'))
+# @router.message(F.text == 'Подключить тарелку')
+@router.callback_query(F.data == 'connect_command')
+async def connect(query: CallbackQuery):
+    client = await Client.objects.aget(pk=query.message.chat.id)
     if not client.kit_number:
-        await msg.answer('Сначала авторизуйтесь по KIT номеру тарелки.')
+        await query.message.answer('Сначала авторизуйтесь по KIT номеру тарелки.')
         return
 
-    await msg.answer(
+    await query.message.answer(
         'Подключение тарелки стоит 5000 ₽',
         reply_markup=one_button_keyboard(
             text='Оплатить',

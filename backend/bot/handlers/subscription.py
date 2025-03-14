@@ -21,12 +21,13 @@ from starlink.models import (
 router = Router()
 
 
-@router.message(Command('subscription'))
-@router.message(F.text == 'Сроки подключения и абонентская плата')
-async def subscription_info(msg: Message, state: FSMContext):
-    client = await Client.objects.aget(pk=msg.chat.id)
+# @router.message(Command('subscription'))
+# @router.message(F.text == 'Сроки подключения и абонентская плата')
+@router.callback_query(F.data == 'subscription_command')
+async def subscription_info(query: CallbackQuery, state: FSMContext):
+    client = await Client.objects.aget(pk=query.message.chat.id)
     if not client.kit_number:
-        await msg.answer(
+        await query.message.answer(
             'Сначала авторизуйтесь по KIT номеру тарелки.',
         )
         return
@@ -90,7 +91,7 @@ async def subscription_info(msg: Message, state: FSMContext):
             days_count=days_count,
         )
 
-        await msg.answer(
+        await query.message.answer(
             text,
             reply_markup=one_button_keyboard(
                 text='Продлить',
@@ -98,7 +99,7 @@ async def subscription_info(msg: Message, state: FSMContext):
             ),
         )
     else:
-        await msg.answer('Выберите тариф:', reply_markup=subscription_plans_kb)
+        await query.message.answer('Выберите тариф:', reply_markup=subscription_plans_kb)
 
 
 @router.callback_query(F.data.in_(SubscriptionPlanChoices.values))

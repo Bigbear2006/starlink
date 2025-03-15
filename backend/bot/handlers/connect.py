@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from aiogram import F, Router
+from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
@@ -8,6 +9,7 @@ from bot.api import alfa
 from bot.keyboards.inline import to_menu_kb
 from bot.keyboards.utils import one_button_keyboard
 from bot.settings import settings
+from bot.states import ConnectionState
 from starlink.models import (
     Client,
     Payment,
@@ -19,7 +21,7 @@ router = Router()
 
 
 @router.callback_query(F.data == 'connect_command')
-async def connect(query: CallbackQuery):
+async def connect(query: CallbackQuery, state: FSMContext):
     client = await Client.objects.aget(pk=query.message.chat.id)
     if not client.kit_number:
         await query.message.answer(
@@ -27,6 +29,7 @@ async def connect(query: CallbackQuery):
         )
         return
 
+    await state.set_state(ConnectionState.form_url)
     await query.message.answer(
         'Подключение тарелки стоит 5000 ₽',
         reply_markup=one_button_keyboard(
@@ -36,7 +39,10 @@ async def connect(query: CallbackQuery):
     )
 
 
-@router.callback_query(F.data == 'pay_connection')
+@router.callback_query(
+    F.data == 'pay_connection',
+    StateFilter(ConnectionState.form_url),
+)
 async def pay_connection(query: CallbackQuery, state: FSMContext):
     client = await Client.objects.aget(pk=query.message.chat.id)
     description = f'Подключение тарелки {client.kit_number}'
@@ -57,6 +63,7 @@ async def pay_connection(query: CallbackQuery, state: FSMContext):
         payment_pk=payment.pk,
     )
 
+    await state.set_state(ConnectionState.check_payment)
     await query.message.answer(
         f'Ваша ссылка на оплату:\n{order_data["formUrl"]}',
         reply_markup=one_button_keyboard(
@@ -66,7 +73,10 @@ async def pay_connection(query: CallbackQuery, state: FSMContext):
     )
 
 
-@router.callback_query(F.data == 'check_connection_payment')
+@router.callback_query(
+    F.data == 'check_connection_payment',
+    StateFilter(ConnectionState.check_payment),
+)
 async def check_payment(query: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     client = await Client.objects.aget(pk=query.message.chat.id)

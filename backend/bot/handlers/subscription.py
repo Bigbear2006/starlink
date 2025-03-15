@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from aiogram import F, Router
+from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 from django.core.exceptions import ObjectDoesNotExist
@@ -9,6 +10,7 @@ from bot.api import alfa
 from bot.keyboards.inline import subscription_plans_kb, to_menu_kb
 from bot.keyboards.utils import one_button_keyboard
 from bot.settings import settings
+from bot.states import SubscriptionState
 from starlink.models import (
     Client,
     Payment,
@@ -96,13 +98,17 @@ async def subscription_info(query: CallbackQuery, state: FSMContext):
             ),
         )
     else:
+        await state.set_state(SubscriptionState.form_url)
         await query.message.answer(
             'Выберите тариф:',
             reply_markup=subscription_plans_kb,
         )
 
 
-@router.callback_query(F.data.in_(SubscriptionPlanChoices.values))
+@router.callback_query(
+    F.data.in_(SubscriptionPlanChoices.values),
+    StateFilter(SubscriptionState.form_url),
+)
 async def pay_subscription_plan(query: CallbackQuery, state: FSMContext):
     plan = SubscriptionPlanChoices(query.data)
     description = f'Оплата подписки {plan.label} на 30 дней'
@@ -127,6 +133,7 @@ async def pay_subscription_plan(query: CallbackQuery, state: FSMContext):
         payment_pk=payment.pk,
     )
 
+    await state.set_state(SubscriptionState.check_payment)
     await query.message.answer(
         f'Вы выбрали тариф {plan.label}.\n'
         f'Ваша ссылка на оплату:\n{order_data["formUrl"]}\n',
@@ -137,7 +144,10 @@ async def pay_subscription_plan(query: CallbackQuery, state: FSMContext):
     )
 
 
-@router.callback_query(F.data == 'check_subscription_buying')
+@router.callback_query(
+    F.data == 'check_subscription_buying',
+    StateFilter(SubscriptionState.check_payment),
+)
 async def check_subscription_buying(query: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     order_data = await alfa.get_order_status(data['order_id'])
@@ -162,6 +172,7 @@ async def check_subscription_buying(query: CallbackQuery, state: FSMContext):
             f'{SubscriptionPlanChoices(data["subscription_plan"]).label}.',
             reply_markup=to_menu_kb,
         )
+        await state.clear()
     else:
         await query.message.answer(
             'К сожалению, оплата не прошла.',
@@ -197,6 +208,7 @@ async def prolong_subscription(query: CallbackQuery, state: FSMContext):
         payment_pk=payment.pk,
     )
 
+    await state.set_state(SubscriptionState.check_payment)
     await query.message.answer(
         f'Ваш тариф: {plan.label}.\n'
         f'Ваша ссылка для оплаты:\n{order_data["formUrl"]}',
@@ -207,7 +219,10 @@ async def prolong_subscription(query: CallbackQuery, state: FSMContext):
     )
 
 
-@router.callback_query(F.data == 'check_subscription_prolonging')
+@router.callback_query(
+    F.data == 'check_subscription_prolonging',
+    StateFilter(SubscriptionState.check_payment),
+)
 async def check_subscription_prolonging(
         query: CallbackQuery,
         state: FSMContext,
@@ -233,6 +248,7 @@ async def check_subscription_prolonging(
             f'Вы продлили подписку на {days_count} дней.',
             reply_markup=to_menu_kb,
         )
+        await state.clear()
     else:
         await query.message.answer(
             'К сожалению, оплата не прошла.',

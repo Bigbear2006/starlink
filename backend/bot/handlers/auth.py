@@ -4,7 +4,6 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from bot.keyboards.inline import to_menu_kb
-from bot.settings import settings
 from bot.states import AuthState
 from starlink.models import Client
 
@@ -29,18 +28,18 @@ async def auth(query: CallbackQuery, state: FSMContext):
 @router.message(F.text, StateFilter(AuthState.plate_number))
 async def set_plate_number(msg: Message, state: FSMContext):
     kit_number = msg.text.strip().upper()
-    if kit_number in settings.KIT_NUMBERS_LIST:
-        await Client.objects.filter(pk=msg.from_user.id)\
-            .aupdate(kit_number=kit_number)
+    # if kit_number in settings.KIT_NUMBERS_LIST:
+    await Client.objects.filter(pk=msg.from_user.id)\
+        .aupdate(kit_number=kit_number)
 
-        await msg.answer(
-            f'Вы успешно авторизовались по номеру тарелки {msg.text.upper()}',
-            reply_markup=to_menu_kb,
-        )
-        await state.clear()
-    else:
-        await msg.answer(
-            'Такого KIT номера нет. '
-            'Попробуйте ещё раз или выйдите в главное меню.',
-            reply_markup=to_menu_kb,
-        )
+    await msg.answer(
+        f'Вы успешно авторизовались по номеру тарелки {msg.text.upper()}',
+        reply_markup=to_menu_kb,
+    )
+    await state.clear()
+    # else:
+    #     await msg.answer(
+    #         'Такого KIT номера нет. '
+    #         'Попробуйте ещё раз или выйдите в главное меню.',
+    #         reply_markup=to_menu_kb,
+    #     )

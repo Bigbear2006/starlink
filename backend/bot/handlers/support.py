@@ -1,5 +1,4 @@
 from aiogram import F, Router
-from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
 
@@ -15,47 +14,32 @@ router = Router()
 async def support(query: CallbackQuery, state: FSMContext):
     await state.update_data(support_section_message_id=None)
 
-    await query.message.answer(
+    await query.message.edit_text(
         'Разделы технической поддержки',
         reply_markup=await keyboard_from_queryset(
             SupportSection,
             'support_section',
+            back_button_data='switch_to_menu_kb',
         ),
     )
 
 
 @router.callback_query(F.data.startswith('support_section'))
-async def solution(query: CallbackQuery, state: FSMContext):
-    support_section_message_id = await state.get_value(
-        'support_section_message_id',
-    )
+async def solution(query: CallbackQuery):
     section = await SupportSection.objects.aget(
         pk=int(query.data.split('_')[-1]),
     )
     text = f'{section.reason}\n\n{section.solution}'
+
     kb = one_button_keyboard(
         text='Мне нужен менеджер',
         callback_data='manager_needed',
+        back_button_data='support_command',
     )
 
-    if support_section_message_id:
-        try:
-            await query.bot.edit_message_text(
-                text,
-                query.message.business_connection_id,
-                query.message.chat.id,
-                support_section_message_id,
-                reply_markup=kb,
-            )
-        except TelegramBadRequest:
-            pass
-    else:
-        support_section_message = await query.message.answer(
-            text, reply_markup=kb,
-        )
-        await state.update_data(
-            support_section_message_id=support_section_message.message_id,
-        )
+    await query.message.edit_text(
+        text, reply_markup=kb,
+    )
 
 
 @router.callback_query(F.data == 'manager_needed')

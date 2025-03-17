@@ -30,11 +30,12 @@ async def connect(query: CallbackQuery, state: FSMContext):
         return
 
     await state.set_state(ConnectionState.form_url)
-    await query.message.answer(
+    await query.message.edit_text(
         'Подключение тарелки стоит 5000 ₽',
         reply_markup=one_button_keyboard(
             text='Оплатить',
             callback_data='pay_connection',
+            back_button_data='switch_to_menu_kb',
         ),
     )
 
@@ -64,7 +65,7 @@ async def pay_connection(query: CallbackQuery, state: FSMContext):
     )
 
     await state.set_state(ConnectionState.check_payment)
-    await query.message.answer(
+    await query.message.edit_text(
         f'Ваша ссылка на оплату:\n{order_data["formUrl"]}',
         reply_markup=one_button_keyboard(
             text='Я оплатил',

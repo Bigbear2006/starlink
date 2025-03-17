@@ -27,11 +27,21 @@ async def start(msg: Message):
     )
 
 
-@router.callback_query(F.data == 'to_menu_command')
+@router.callback_query(F.data == 'to_menu')
 async def menu(query: CallbackQuery, state: FSMContext):
     client = await Client.objects.aget(pk=query.message.chat.id)
     await state.clear()
     await query.message.answer(
+        'Вы перешли в главное меню.',
+        reply_markup=authorized_kb if client.kit_number else unauthorized_kb,
+    )
+
+
+@router.callback_query(F.data == 'switch_to_menu_kb')
+async def menu(query: CallbackQuery, state: FSMContext):
+    client = await Client.objects.aget(pk=query.message.chat.id)
+    await state.clear()
+    await query.message.edit_text(
         'Вы перешли в главное меню.',
         reply_markup=authorized_kb if client.kit_number else unauthorized_kb,
     )

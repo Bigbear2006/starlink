@@ -15,6 +15,7 @@ from aiogram.types import (
 from bot.api import alfa
 from bot.keyboards.inline import plate_kb, to_menu_kb
 from bot.keyboards.utils import keyboard_from_queryset, one_button_keyboard
+from bot.loader import logger
 from bot.settings import settings
 from bot.states import BuyingState
 from starlink.models import (
@@ -31,9 +32,13 @@ router = Router()
 async def buy(query: CallbackQuery, state: FSMContext):
     await state.update_data(plate_message_id=None)
 
-    await query.message.answer(
+    await query.message.edit_text(
         'Тарелки',
-        reply_markup=await keyboard_from_queryset(Plate, 'plate'),
+        reply_markup=await keyboard_from_queryset(
+            Plate,
+            'plate',
+            back_button_data='switch_to_menu_kb'
+        ),
     )
 
 
@@ -47,7 +52,7 @@ async def display_plate(query: CallbackQuery, state: FSMContext):
     media = BufferedInputFile.from_file(unquote(plate.photo.url.lstrip('/')))
     caption = (
         f'{plate.model}\n\n'
-        f'Цена: {plate.price}\n'
+        f'Цена: {plate.price} ₽\n'
         f'{plate.description}'
     )
 

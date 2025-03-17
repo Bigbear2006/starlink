@@ -1,12 +1,14 @@
 from aiogram import F, Router
 from aiogram.types import CallbackQuery
 
+from bot.keyboards.utils import one_button_keyboard
+
 router = Router()
 
 
 @router.callback_query(F.data == 'faq_command')
 async def faq(query: CallbackQuery):
-    await query.message.answer(
+    await query.message.edit_text(
         'Правила активации и оплаты спутниковой тарелки:\n\n'
 
         '1. Активация\n'
@@ -25,7 +27,11 @@ async def faq(query: CallbackQuery):
         '3. Напоминание о платеже\n'
         '• Напоминание о необходимости оплаты направляется за 2-3 дня '
         'до фактической даты отключения.\n'
-        '• Уведомление отправляется на номер КИТ (идентификатор тарелки).\n'
+        '• Уведомление отправляется на номер КИТ (идентификатор тарелки).\n\n'
         'Такой порядок делает правила логичными, '
         'понятными и последовательными.',
+        reply_markup=one_button_keyboard(
+            text='Назад',
+            callback_data='switch_to_menu_kb',
+        )
     )

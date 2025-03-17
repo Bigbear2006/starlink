@@ -90,16 +90,17 @@ async def subscription_info(query: CallbackQuery, state: FSMContext):
             days_count=days_count,
         )
 
-        await query.message.answer(
+        await query.message.edit_text(
             text,
             reply_markup=one_button_keyboard(
                 text='Продлить',
                 callback_data='prolong_subscription',
+                back_button_data='switch_to_menu_kb'
             ),
         )
     else:
         await state.set_state(SubscriptionState.form_url)
-        await query.message.answer(
+        await query.message.edit_text(
             'Выберите тариф:',
             reply_markup=subscription_plans_kb,
         )
@@ -109,8 +110,24 @@ async def subscription_info(query: CallbackQuery, state: FSMContext):
     F.data.in_(SubscriptionPlanChoices.values),
     StateFilter(SubscriptionState.form_url),
 )
-async def pay_subscription_plan(query: CallbackQuery, state: FSMContext):
+async def pay_subscription_plan(query: CallbackQuery):
     plan = SubscriptionPlanChoices(query.data)
+    await query.message.edit_text(
+        f'Вы выбрали тариф {plan.label}',
+        reply_markup=one_button_keyboard(
+            text='Оплатить',
+            callback_data=f'pay_{plan.value}',
+            back_button_data='subscription_command',
+        )
+    )
+
+
+@router.callback_query(
+    F.data.startswith('pay_'),
+    StateFilter(SubscriptionState.form_url),
+)
+async def pay_subscription_plan(query: CallbackQuery, state: FSMContext):
+    plan = SubscriptionPlanChoices(query.data.split('_')[-1])
     description = f'Оплата подписки {plan.label} на 30 дней'
     order_data = await alfa.register_order(
         plan.get_price() * 100,
@@ -134,7 +151,7 @@ async def pay_subscription_plan(query: CallbackQuery, state: FSMContext):
     )
 
     await state.set_state(SubscriptionState.check_payment)
-    await query.message.answer(
+    await query.message.edit_text(
         f'Вы выбрали тариф {plan.label}.\n'
         f'Ваша ссылка на оплату:\n{order_data["formUrl"]}\n',
         reply_markup=one_button_keyboard(
@@ -209,7 +226,7 @@ async def prolong_subscription(query: CallbackQuery, state: FSMContext):
     )
 
     await state.set_state(SubscriptionState.check_payment)
-    await query.message.answer(
+    await query.message.edit_text(
         f'Ваш тариф: {plan.label}.\n'
         f'Ваша ссылка для оплаты:\n{order_data["formUrl"]}',
         reply_markup=one_button_keyboard(

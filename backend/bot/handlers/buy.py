@@ -79,6 +79,15 @@ async def display_plate(query: CallbackQuery, state: FSMContext):
         await state.update_data(plate_message_id=plate_message.message_id)
 
 
+@router.callback_query(F.data == 'delete_plate_message')
+async def delete_plate_message(query: CallbackQuery, state: FSMContext):
+    await query.bot.delete_message(
+        query.message.chat.id,
+        await state.get_value('plate_message_id')
+    )
+    await state.update_data(plate_message_id=None, plate_id=None)
+
+
 @router.callback_query(F.data == 'buy_plate')
 async def buy_plate(query: CallbackQuery, state: FSMContext):
     await query.message.answer('Укажите имя (как к вам обращаться)')
@@ -115,6 +124,7 @@ async def set_phone(msg: Message, state: FSMContext):
 
     await state.update_data(
         order_id=order_data['orderId'],
+        form_url=order_data["formUrl"],
         payment_pk=payment.pk,
     )
 
@@ -152,14 +162,15 @@ async def check_buying_payment(query: CallbackQuery, state: FSMContext):
             text += f'Юзернейм: @{query.message.chat.username}'
 
         await query.bot.send_message(settings.FORWARD_CHAT_ID, text)
-        await query.message.answer(
+        await query.message.edit_text(
             'Готово, в ближайшее время с вами свяжется менеджер '
             'для уточнения деталей доставки.',
             reply_markup=to_menu_kb,
         )
         await state.clear()
     else:
-        await query.message.answer(
-            'К сожалению оплата не прошла.',
+        await query.message.edit_text(
+            'К сожалению оплата не прошла.\n'
+            f'Вы можете попробовать оплатить еще раз:\n{data["form_url"]}',
             reply_markup=to_menu_kb,
         )

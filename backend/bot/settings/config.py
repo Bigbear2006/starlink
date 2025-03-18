@@ -27,7 +27,7 @@ class Settings:
     )
 
     FORWARD_CHAT_ID: str = field(default='-1002309981972')
-    MANAGER_URL: str = field(default='@maxxx190286')
+    MANAGER_URL: str = field(default='https://t.me/maxxx190286')
     KIT_NUMBERS_LIST: list[str] = field(default_factory=load_kit_numbers_list)
 
     DATE_FMT: str = field(default='%d.%m.%Y %H:%M')
@@ -35,3 +35,6 @@ class Settings:
     TZ: timezone = field(
         default_factory=lambda: timezone('Europe/Moscow'),
     )
+
+    СONNECTION_PRICE: int = field(default=5_000)
+    ONETIME_PAYMENT_PRICE: int = field(default=33_000)

@@ -37,6 +37,7 @@ class SubscriptionPlanChoices(models.TextChoices):
 class PaymentTypeChoices(models.TextChoices):
     BUYING = 'buying', 'Покупка тарелки'
     CONNECTION = 'connection', 'Подключение тарелки'
+    ONETIME_PAYMENT = 'onetime_payment', 'Единоразовый платеж'
     SUBSCRIPTION = 'subscription', 'Оплата подписки'
 
 
@@ -115,6 +116,7 @@ class Client(models.Model):
         null=True,
         blank=True,
     )
+    onetime_payment = models.BooleanField(verbose_name='Внесен единоразовый платеж', default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     objects = ClientManager()
 
@@ -180,6 +182,7 @@ class Payment(models.Model):
 
 
 class SupportSection(models.Model):
+    photo = models.ImageField(verbose_name='Картинка', upload_to='support')
     reason = models.TextField(verbose_name='Причина')
     solution = models.TextField(verbose_name='Решение')
     objects: models.Manager
@@ -191,6 +194,19 @@ class SupportSection(models.Model):
 
     def __str__(self):
         return self.reason[:50]
+
+
+class FAQ(models.Model):
+    text = models.TextField(verbose_name='Текст')
+    objects: models.Manager
+
+    class Meta:
+        verbose_name = 'Часто задаваемые вопросы'
+        verbose_name_plural = 'Часто задаваемые вопросы'
+        ordering = ['id']
+
+    def __str__(self):
+        return self.text[:50]
 
 
 class Publication(models.Model):

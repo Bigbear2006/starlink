@@ -128,7 +128,9 @@ async def pay_subscription_plan(query: CallbackQuery):
 )
 async def pay_subscription_plan(query: CallbackQuery, state: FSMContext):
     plan = SubscriptionPlanChoices(query.data.split('_')[-1])
-    description = f'Оплата подписки {plan.label} на 30 дней'
+    client = await Client.objects.aget(pk=query.message.chat.id)
+    description = f'Оплата подписки {plan.label} на 30 дней ' \
+                  f'({client.kit_number})'
     order_data = await alfa.register_order(
         plan.get_price() * 100,
         description,
@@ -147,6 +149,7 @@ async def pay_subscription_plan(query: CallbackQuery, state: FSMContext):
     await state.update_data(
         subscription_plan=plan.value,
         order_id=order_data['orderId'],
+        form_url=order_data['formUrl'],
         payment_pk=payment.pk,
     )
 
@@ -184,15 +187,16 @@ async def check_subscription_buying(query: CallbackQuery, state: FSMContext):
                 subscription_plan=data['subscription_plan'],
             )
 
-        await query.message.answer(
+        await query.message.edit_text(
             f'Вы купили подписку '
             f'{SubscriptionPlanChoices(data["subscription_plan"]).label}.',
             reply_markup=to_menu_kb,
         )
         await state.clear()
     else:
-        await query.message.answer(
-            'К сожалению, оплата не прошла.',
+        await query.message.edit_text(
+            'К сожалению, оплата не прошла.'
+            f'Вы можете попробовать оплатить еще раз:\n{data["form_url"]}',
             reply_markup=to_menu_kb,
         )
 
@@ -202,7 +206,9 @@ async def prolong_subscription(query: CallbackQuery, state: FSMContext):
     data = await state.get_data()
     plan = SubscriptionPlanChoices(data['subscription_plan'])
     days_count = data.get('days_count', 30)
-    description = f'Продление подписки {plan.label} на {days_count} дней'
+    client = await Client.objects.aget(pk=query.message.chat.id)
+    description = f'Продление подписки {plan.label} на {days_count} дней ' \
+                  f'({client.kit_number})'
 
     order_data = await alfa.register_order(
         plan.get_price() * days_count / 30 * 100,
@@ -222,6 +228,7 @@ async def prolong_subscription(query: CallbackQuery, state: FSMContext):
     await state.update_data(
         subscription_plan=plan.value,
         order_id=order_data['orderId'],
+        form_url=order_data['formUrl'],
         payment_pk=payment.pk,
     )
 
@@ -261,13 +268,14 @@ async def check_subscription_prolonging(
             .filter(pk=query.message.chat.id)\
             .aupdate(subscription_end=sub_end + timedelta(days=days_count))
 
-        await query.message.answer(
+        await query.message.edit_text(
             f'Вы продлили подписку на {days_count} дней.',
             reply_markup=to_menu_kb,
         )
         await state.clear()
     else:
-        await query.message.answer(
-            'К сожалению, оплата не прошла.',
+        await query.message.edit_text(
+            'К сожалению, оплата не прошла.\n'
+            f'Вы можете попробовать оплатить еще раз:\n{data["form_url"]}',
             reply_markup=to_menu_kb,
         )

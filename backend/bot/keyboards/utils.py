@@ -10,9 +10,9 @@ def one_button_keyboard(
 ) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
 
+    kb.button(**kwargs)
     if back_button_data:
         kb.button(text='Назад', callback_data=back_button_data)
-    kb.button(**kwargs)
 
     kb.adjust(1)
     return kb.as_markup()
@@ -26,11 +26,11 @@ async def keyboard_from_queryset(
 ) -> InlineKeyboardMarkup:
     kb = InlineKeyboardBuilder()
 
-    if back_button_data:
-        kb.button(text='Назад', callback_data=back_button_data)
-
     async for obj in model.objects.all():
         kb.button(text=str(obj), callback_data=f'{prefix}_{obj.pk}')
+
+    if back_button_data:
+        kb.button(text='Назад', callback_data=back_button_data)
 
     kb.adjust(1)
     return kb.as_markup()

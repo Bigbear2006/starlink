@@ -20,6 +20,7 @@ async def main():
         faq,
         subscription,
         support,
+        onetime_payment,
     )
 
     dp.include_routers(
@@ -28,6 +29,7 @@ async def main():
         buy.router,
         connect.router,
         subscription.router,
+        onetime_payment.router,
         faq.router,
         support.router,
     )

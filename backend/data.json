@@ -23,24 +23,27 @@
   "model": "starlink.supportsection",
   "pk": 1,
   "fields": {
+    "photo": "support/support1.jpg",
     "reason": "Не активирована подписка",
-    "solution": "Если обслуживание Starlink остановлено или отменено, вы можете управлять услугой ниже.\r\nЕсли вы купили Starlink не у нас, активируйте его."
+    "solution": "No active subscription / Не активирована подписка\r\n\r\nPlease activate or resume your service / Активируйте или возобновите услугу\r\n\r\nIf Starlink service is paused or cancelled, manage your service below / Если обслуживание Starlink остановлено или отменено, вы можете управлять услугой ниже.\r\n\r\nIf you purchased your Starlink from a retail store or third party, activate it below / Если вы купили Starlink не у нас, активируйте его"
   }
 },
 {
   "model": "starlink.supportsection",
   "pk": 2,
   "fields": {
+    "photo": "support/support2.jpg",
     "reason": "Перерывы в работе",
-    "solution": "Ожидаются перерывы в работе Starlink каждые 55 минут."
+    "solution": "Obstructed / Перерывы в работе\r\nExpect an interruption every 55 minutes / Ожидаются перерывы в работе Starlink каждые 55 минут.\r\n\r\nCaution is advised while using Starlink in conflict areas / Рекомендуем соблюдать осторожность, если вы используете Starlink в зоне конфликта.\r\nTap for more information / нажмите, чтобы узнать больше\r\n\r\nDetermining location / Определение местоположения\r\nYour Starlink is acquiring GPS signal. This may take up to 15 minutes. Don't unplug your Starlink during this time / Ваш Starlink получает GPS сигнал. Это может занять до 15 минут. Не отключайте Starlink в это время.\r\n\r\nUpdate Starlink app / Обновите приложение\r\nA newer version of the Starlink app is available. Update now for the latest improvements and bug fixes. / Доступна более новая версия приложения. Обновите его сейчас для получения последних улучшений и исправления ошибок."
   }
 },
 {
   "model": "starlink.supportsection",
   "pk": 3,
   "fields": {
+    "photo": "support/support3.jpg",
     "reason": "Использование в зоне конфликта",
-    "solution": "Рекомендуем соблюдать осторожность, если вы используете Starlink в зоне конфликта."
+    "solution": "Caution is advised while using Starlink in conflict areas / Рекомендуем соблюдать осторожность, если вы используете Starlink в зоне конфликта.\r\n\r\nTap for more information / нажмите, чтобы узнать больше\r\nLearn more / Узнать больше\r\n\r\nNo active subscription / Не активирована подписка\r\n\r\nPlease activate or resume your service / Активируйте или возобновите услугу"
   }
 }
 ]

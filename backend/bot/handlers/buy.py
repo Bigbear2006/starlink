@@ -11,6 +11,7 @@ from aiogram.types import (
     InputMediaPhoto,
     Message,
 )
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot.api import alfa
 from bot.keyboards.inline import plate_kb, to_menu_kb
@@ -124,7 +125,7 @@ async def set_phone(msg: Message, state: FSMContext):
 
     await state.update_data(
         order_id=order_data['orderId'],
-        form_url=order_data["formUrl"],
+        form_url=order_data['formUrl'],
         payment_pk=payment.pk,
     )
 
@@ -169,8 +170,19 @@ async def check_buying_payment(query: CallbackQuery, state: FSMContext):
         )
         await state.clear()
     else:
-        await query.message.edit_text(
-            'К сожалению оплата не прошла.\n'
-            f'Вы можете попробовать оплатить еще раз:\n{data["form_url"]}',
-            reply_markup=to_menu_kb,
+        kb = InlineKeyboardBuilder.from_markup(
+            one_button_keyboard(
+                text='Я оплатил',
+                callback_data='check_buying_payment',
+            ),
         )
+        kb.button(text='В меню', callback_data='switch_to_menu_kb')
+
+        try:
+            await query.message.edit_text(
+                'К сожалению оплата не прошла.\n'
+                f'Вы можете попробовать оплатить еще раз:\n{data["form_url"]}',
+                reply_markup=kb.adjust(1).as_markup(),
+            )
+        except TelegramBadRequest:
+            pass

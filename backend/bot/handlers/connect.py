@@ -1,9 +1,11 @@
 from datetime import datetime
 
 from aiogram import F, Router
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery
+from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot.api import alfa
 from bot.keyboards.inline import to_menu_kb
@@ -101,9 +103,20 @@ async def check_payment(query: CallbackQuery, state: FSMContext):
         )
         await state.clear()
     else:
-        await query.message.edit_text(
-            'К сожалению, оплата не прошла.\n'
-            f'Вы можете попробовать оплатить еще раз:\n{data["form_url"]}',
-            reply_markup=to_menu_kb,
+        kb = InlineKeyboardBuilder.from_markup(
+            one_button_keyboard(
+                text='Я оплатил',
+                callback_data='check_connection_payment',
+            ),
         )
+        kb.button(text='В меню', callback_data='switch_to_menu_kb')
+
+        try:
+            await query.message.edit_text(
+                'К сожалению, оплата не прошла.\n'
+                f'Вы можете попробовать оплатить еще раз:\n{data["form_url"]}',
+                reply_markup=kb.adjust(1).as_markup(),
+            )
+        except TelegramBadRequest:
+            pass
 

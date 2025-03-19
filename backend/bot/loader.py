@@ -6,6 +6,7 @@ from aiogram.fsm.storage.redis import RedisStorage
 from bot.settings import settings
 
 logging.basicConfig(
+    filename='logs/bot.log',
     format='[{asctime}] {levelname} {name}: {message}',
     datefmt='%Y-%m-%d %H:%M:%S',
     style='{',
